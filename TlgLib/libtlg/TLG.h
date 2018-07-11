@@ -25,8 +25,9 @@
 	callback type to inform the image's size.
 	call this once before TVPGraphicScanLineCallback.
 	return false can stop processing
+	color: 1=8bits, 3=24bits, 4=32bits
 */
-typedef bool (*tTVPGraphicSizeCallback)(void *callbackdata, tjs_uint w, tjs_uint h);
+typedef bool (*tTVPGraphicSizeCallback)(void *callbackdata, tjs_uint width, tjs_uint height, tjs_uint color);
 
 /*
 	callback type to ask the scanline buffer for the decoded image, per a line.

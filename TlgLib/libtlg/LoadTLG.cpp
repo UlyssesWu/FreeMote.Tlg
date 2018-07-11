@@ -65,7 +65,7 @@ int TVPLoadTLG5(void *callbackdata,
 		return false;
 	}
 
-	if (sizecallback && !sizecallback(callbackdata, width, height)) {
+	if (sizecallback && !sizecallback(callbackdata, width, height, colors)) {
 		return TLG_ABORT;
 	}
 	
@@ -262,7 +262,7 @@ int TVPLoadTLG6(void *callbackdata,
 	}
 
 	// set destination size
-	if (sizecallback && !sizecallback(callbackdata, width, height)) {
+	if (sizecallback && !sizecallback(callbackdata, width, height, colors)) {
 		return TLG_ABORT;
 	}
 
@@ -490,7 +490,8 @@ TVPCheckTLG(tTJSBinaryStream *src)
 	if (src->ReadBuffer(mark, 11)) {
 		// check for TLG0.0 sds
 		if(!memcmp("TLG0.0\x00sds\x1a\x00", mark, 11) ||
-		   !memcmp("TLG5.0\x00raw\x1a\x00", mark, 11) |\
+		   //!memcmp("TLG5.0\x00raw\x1a\x00", mark, 11) |\ //<-maybe correct but WTF?
+		   !memcmp("TLG5.0\x00raw\x1a\x00", mark, 11) ||
 		   !memcmp("TLG6.0\x00raw\x1a\x00", mark, 11)) {
 			ret = true;
 		}
@@ -498,13 +499,12 @@ TVPCheckTLG(tTJSBinaryStream *src)
 	return ret;
 }
 
-
 struct SizeInfo {
 	int width;
 	int height;
 };
 
-static bool getSize(void *callbackdata, tjs_uint w, tjs_uint h)
+static bool getSize(void *callbackdata, tjs_uint w, tjs_uint h, tjs_uint colors)
 {
 	SizeInfo *info = (SizeInfo*)callbackdata;
 	info->width = w;
