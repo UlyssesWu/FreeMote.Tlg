@@ -4,12 +4,16 @@
 
 ## Benchmark
 
-We ran a benchmark to compare @[morkt](https://github.com/morkt/GARbro)'s managed TLG loader (LICENSE: MIT) with this (only for loading).
+We ran a benchmark to compare @[morkt/GARbro](https://github.com/morkt/GARbro)'s managed TLG loader with this (only for loading).
 
 ``` ini
 
 BenchmarkDotNet=v0.10.14, OS=Windows 10.0.17134
 Intel Core i5-6300U CPU 2.40GHz (Skylake), 1 CPU, 4 logical and 2 physical cores
+
+Managed = morkt's pure managed TLG loader;
+NativeCopy = TlgNative.ToBitmap(byte[], out int, bool);
+NativeLoader = new TlgLoader(byte[]).Bitmap;
 
 ```
 |                Method |     Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
@@ -19,11 +23,7 @@ Intel Core i5-6300U CPU 2.40GHz (Skylake), 1 CPU, 4 logical and 2 physical cores
 | NativeLoaderBenchmark | 28.33 ms | 0.5198 ms | 0.4608 ms |        - |        - |        - |       0 B |
 
 
-Managed = morkt's pure managed TLG loader;
 
-NativeCopy = TlgNative.ToBitmap(byte[], out int, bool);
-
-NativeLoader = new TlgLoader(byte[]).Bitmap;
 
 ## Thanks
 
