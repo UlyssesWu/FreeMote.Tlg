@@ -12,7 +12,9 @@ namespace FreeMote.Tlg.Tests
     {
         static void Main(string[] args)
         {
-            var target = "NewGame5.tlg";
+            MemoryTest();
+            
+            var target = File.Exists("test.tlg") ? "test.tlg" : "NewGame5.tlg";
             TlgImageConverter converter = new TlgImageConverter();
             var original = File.ReadAllBytes(target);
             byte[] converted = null;
@@ -54,6 +56,47 @@ namespace FreeMote.Tlg.Tests
             bmp2.Save("output2.png", ImageFormat.Png);
 
             Console.WriteLine("Done.");
+            Console.ReadLine();
+        }
+
+        static void MemoryTest()
+        {
+            var target = File.Exists("test.tlg") ? "test.tlg" : "NewGame5.tlg";
+            TlgImageConverter converter = new TlgImageConverter();
+            var original = File.ReadAllBytes(target);
+            Console.WriteLine("TLG bytes loaded.");
+            Console.ReadLine();
+
+            using (var ms = new MemoryStream(original))
+            {
+                using (BinaryReader br = new BinaryReader(ms))
+                {
+                    Bitmap b = converter.Read(br);
+                    b.Dispose();
+                }
+            }
+
+            Console.WriteLine("Managed done.");
+            Console.ReadLine();
+            GC.Collect();
+
+            using (TlgLoader ldr = new TlgLoader(original))
+            {
+                Bitmap b = ldr.Bitmap;
+                b.Dispose();
+            }
+
+            Console.WriteLine("NativeLoader done.");
+            Console.ReadLine();
+            GC.Collect();
+
+            Bitmap b2 = TlgNative.ToBitmap(original, out _);
+            b2.Dispose();
+            Console.WriteLine("NativeCopy done.");
+            Console.ReadLine();
+            GC.Collect();
+
+            Console.WriteLine("All done.");
             Console.ReadLine();
         }
     }
