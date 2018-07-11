@@ -49,6 +49,9 @@
     <Compile Include="TlgImageConverter.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="NewGame5.tlg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>

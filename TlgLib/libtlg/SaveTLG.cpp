@@ -20,23 +20,23 @@ extern int SaveTLG6(tTJSBinaryStream *out, int width, int height, int colors, vo
  */
 int
 TVPSaveTLG(tTJSBinaryStream *dest,
-		   int type,
-		   int width, int height, int colors,
-		   void *callback,
-		   tTVPGraphicScanLineCallback scanlinecallback,
-		   const std::map<std::string,std::string> *tags)
+	int type,
+	int width, int height, int colors,
+	void *callback,
+	tTVPGraphicScanLineCallback scanlinecallback,
+	const std::map<std::string, std::string> *tags)
 {
-	int (*saveproc)(tTJSBinaryStream *, int, int, int, void *, tTVPGraphicScanLineCallback);
+	int(*saveproc)(tTJSBinaryStream *, int, int, int, void *, tTVPGraphicScanLineCallback);
 
 	saveproc = (type == 0) ? SaveTLG5 : SaveTLG6;
-	
+
 	// if no tags given, simply write TLG stream
 	if (tags == NULL || tags->size() == 0) {
 		return saveproc(dest, width, height, colors, callback, scanlinecallback);
 	}
 
 	// タグありTLGファイルの処理
-	
+
 	// write TLG0.0 Structured Data Stream header
 	if (!dest->WriteBuffer("TLG0.0\x00sds\x1a\x00", 11)) {
 		return TLG_ERROR;
@@ -70,9 +70,10 @@ TVPSaveTLG(tTJSBinaryStream *dest,
 
 	// build tag chunk data
 	std::stringstream ss;
-	std::map<std::string,std::string>::const_iterator it = tags->begin();
+	std::map<std::string, std::string>::const_iterator it = tags->begin();
 	while (it != tags->end()) {
 		ss << it->first.length() << ":" << it->first << "=" << it->second.length() << ":" << it->second << ",";
+		it++; //FIXED: by Ulysses
 	}
 
 	std::string s = ss.str();
@@ -82,6 +83,6 @@ TVPSaveTLG(tTJSBinaryStream *dest,
 		!dest->WriteBuffer(s.c_str(), s.length())) {
 		return TLG_ERROR;
 	}
-	
+
 	return TLG_SUCCESS;
 }
