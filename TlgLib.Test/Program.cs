@@ -45,6 +45,14 @@ namespace FreeMote.Tlg.Tests
                 }
             }
 
+            Console.WriteLine($"IsTLG: {(TlgNative.CheckTlg(original) ? "Yes" : "No")}");
+            if (TlgNative.GetInfoTlg(original, out int w, out int h))
+            {
+                Console.WriteLine($"TLG Size: {w} x {h}");
+            }
+            var bmp2 = TlgNative.ToBitmap(original);
+            bmp2.Save("output2.png", ImageFormat.Png);
+
             Console.WriteLine("Done.");
             Console.ReadLine();
         }
