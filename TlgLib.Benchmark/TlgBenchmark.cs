@@ -66,6 +66,7 @@ namespace TlgLib.Benchmark
             using (var ldr = new TlgLoader(_tlgBytes))
             {
                 int w = ldr.Bitmap.Width;
+                ldr.Bitmap.Dispose();
             }
         }
 

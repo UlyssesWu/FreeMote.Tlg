@@ -2,9 +2,6 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using FreeMote.Tlg;
 
 namespace FreeMote.Tlg.Tests
 {
@@ -67,6 +64,7 @@ namespace FreeMote.Tlg.Tests
             Console.WriteLine("TLG bytes loaded.");
             Console.ReadLine();
 
+            //Pure managed!
             using (var ms = new MemoryStream(original))
             {
                 using (BinaryReader br = new BinaryReader(ms))
@@ -85,11 +83,14 @@ namespace FreeMote.Tlg.Tests
                 Bitmap b = ldr.Bitmap;
                 b.Dispose();
             }
-
+            //You can still access b's properties here (out of `using` scope) if you don't dispose it,
+            //but you can not call `Save` or `LockBits` etc. because the data is deleted.
             Console.WriteLine("NativeLoader done.");
             Console.ReadLine();
             GC.Collect();
 
+            //By default `ToBitmap` copies data to managed side so you can call `Save` as you want.
+            //Set `useUnmanagedScan0 = true` to make it behave like TlgLoader but no one deletes the data!!
             Bitmap b2 = TlgNative.ToBitmap(original, out _);
             b2.Dispose();
             Console.WriteLine("NativeCopy done.");
