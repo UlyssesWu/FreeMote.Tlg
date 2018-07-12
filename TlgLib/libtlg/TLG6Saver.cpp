@@ -1,4 +1,4 @@
- //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 #include "tlg.h"
 #include "slide.h"
@@ -150,7 +150,7 @@ extern void TVPCreateTable(void);
 		ガンマ符号は以下の形式で、0を保存する必要がないため(長さ0はあり得な
 		いので)、表現できる最低の値は1となっています。
 
-		                  MSB ←    → LSB
+						  MSB ←    → LSB
 		(v=1)                            1
 		(2<=v<=3)                      x10          x = v-2
 		(4<=v<=7)                    xx100         xx = v-4
@@ -160,8 +160,8 @@ extern void TVPCreateTable(void);
 		(64<=v<=127)        xxxxx x1000000     xxxxxx = v-64
 		(128<=v<=255)     xxxxxxx 10000000    xxxxxxx = v-128
 		(256<=v<=511)    xxxxxxx1 00000000   xxxxxxxx = v-256
-		      :                    :                  :
-		      :                    :                  :
+			  :                    :                  :
+			  :                    :                  :
 
 		ゴロム・ライス符号は以下の方法で符号化します。まず、符号化しようとす
 		る値をeとします。eには1以上の正の整数と-1以下の負の整数が存在します。
@@ -208,7 +208,7 @@ extern void TVPCreateTable(void);
 		すると 10000011 となりますが、これの下位から 5 ビット分を出力します。
 
 
-        MSB←  →LSB
+		MSB←  →LSB
 		00011 1 0000      (計10ビット)
 		~~~~~ ~ ~~~~
 		  c   b   a
@@ -257,7 +257,7 @@ void CompressValuesGolomb(TLG6BitStream &bs, char *buf, int size)
 	// golomb encoding, -- http://oku.edu.mie-u.ac.jp/~okumura/compression/golomb/
 
 	// run-length golomb method
-	bs.PutValue(buf[0]?1:0, 1); // initial value state
+	bs.PutValue(buf[0] ? 1 : 0, 1); // initial value state
 
 	int count;
 
@@ -265,59 +265,59 @@ void CompressValuesGolomb(TLG6BitStream &bs, char *buf, int size)
 	int a = 0; // 予測誤差の絶対値の和
 
 	count = 0;
-	for(int i = 0; i < size; i++)
+	for (int i = 0; i < size; i++)
 	{
-		if(buf[i])
+		if (buf[i])
 		{
 			// write zero count
-			if(count) bs.PutGamma(count);
+			if (count) bs.PutGamma(count);
 
 			// count non-zero values
 			count = 0;
 			int ii;
-			for(ii = i; ii < size; ii++)
+			for (ii = i; ii < size; ii++)
 			{
-				if(buf[ii]) count++; else break;
+				if (buf[ii]) count++; else break;
 			}
 
 			// write non-zero count
 			bs.PutGamma(count);
 
 			// write non-zero values
-			for(; i < ii; i++)
+			for (; i < ii; i++)
 			{
 				int e = buf[i];
 #ifdef WRITE_VSTXT
 				fprintf(vstxt, "%d ", e);
 #endif
 				int k = TVPTLG6GolombBitLengthTable[a][n];
-				int m = ((e >= 0) ? 2*e : -2*e-1) - 1;
+				int m = ((e >= 0) ? 2 * e : -2 * e - 1) - 1;
 				int store_limit = bs.GetBytePos() + GOLOMB_GIVE_UP_BYTES;
 				bool put1 = true;
-				for(int c = (m >> k); c > 0; c--)
+				for (int c = (m >> k); c > 0; c--)
 				{
-					if(store_limit == bs.GetBytePos())
+					if (store_limit == bs.GetBytePos())
 					{
 						bs.PutValue(m >> k, 8);
 #ifdef WRITE_VSTXT
-						fprintf(vstxt, "[ %d ] ", m>>k);
+						fprintf(vstxt, "[ %d ] ", m >> k);
 #endif
 						put1 = false;
 						break;
 					}
 					bs.Put1Bit(0);
 				}
-				if(store_limit == bs.GetBytePos())
+				if (store_limit == bs.GetBytePos())
 				{
 					bs.PutValue(m >> k, 8);
 #ifdef WRITE_VSTXT
-					fprintf(vstxt, "[ %d ] ", m>>k);
+					fprintf(vstxt, "[ %d ] ", m >> k);
 #endif
 					put1 = false;
 				}
-				if(put1) bs.Put1Bit(1);
+				if (put1) bs.Put1Bit(1);
 				bs.PutValue(m, k);
-				a += (m>>1);
+				a += (m >> 1);
 				if (--n < 0) {
 					a >>= 1; n = TVP_TLG6_GOLOMB_N_COUNT - 1;
 				}
@@ -333,11 +333,11 @@ void CompressValuesGolomb(TLG6BitStream &bs, char *buf, int size)
 		else
 		{
 			// zero
-			count ++;
+			count++;
 		}
 	}
 
-	if(count) bs.PutGamma(count);
+	if (count) bs.PutGamma(count);
 }
 //---------------------------------------------------------------------------
 class TryCompressGolomb
@@ -381,34 +381,34 @@ public:
 
 	int Try(char *buf, int size)
 	{
-		for(int i = 0; i < size; i++)
+		for (int i = 0; i < size; i++)
 		{
-			if(buf[i])
+			if (buf[i])
 			{
 				// write zero count
-				if(!LastNonZero)
+				if (!LastNonZero)
 				{
-					if(Count)
+					if (Count)
 						TotalBits +=
-							TLG6BitStream::GetGammaBitLength(Count);
+						TLG6BitStream::GetGammaBitLength(Count);
 
 					// count non-zero values
 					Count = 0;
 				}
 
 				// write non-zero values
-				for(; i < size; i++)
+				for (; i < size; i++)
 				{
 					int e = buf[i];
-					if(!e) break;
-					Count ++;
+					if (!e) break;
+					Count++;
 					int k = TVPTLG6GolombBitLengthTable[A][N];
-					int m = ((e >= 0) ? 2*e : -2*e-1) - 1;
-					int unexp_bits = (m>>k);
-					if(unexp_bits >= (GOLOMB_GIVE_UP_BYTES*8-8/2))
-						unexp_bits = (GOLOMB_GIVE_UP_BYTES*8-8/2)+8;
+					int m = ((e >= 0) ? 2 * e : -2 * e - 1) - 1;
+					int unexp_bits = (m >> k);
+					if (unexp_bits >= (GOLOMB_GIVE_UP_BYTES * 8 - 8 / 2))
+						unexp_bits = (GOLOMB_GIVE_UP_BYTES * 8 - 8 / 2) + 8;
 					TotalBits += unexp_bits + 1 + k;
-					A += (m>>1);
+					A += (m >> 1);
 					if (--N < 0) {
 						A >>= 1; N = TVP_TLG6_GOLOMB_N_COUNT - 1;
 					}
@@ -422,16 +422,16 @@ public:
 			else
 			{
 				// zero
-				if(LastNonZero)
+				if (LastNonZero)
 				{
-					if(Count)
+					if (Count)
 					{
 						TotalBits += TLG6BitStream::GetGammaBitLength(Count);
 						Count = 0;
 					}
 				}
 
-				Count ++;
+				Count++;
 				LastNonZero = false;
 			}
 		}
@@ -440,7 +440,7 @@ public:
 
 	int Flush()
 	{
-		if(Count)
+		if (Count)
 		{
 			TotalBits += TLG6BitStream::GetGammaBitLength(Count);
 			Count = 0;
@@ -461,226 +461,226 @@ void ApplyColorFilter(char * bufb, char * bufg, char * bufr, int len, int code)
 {
 	int d;
 	unsigned char t;
-	switch(code)
+	switch (code)
 	{
 	case 0:
 		break;
 	case 1:
-		#define FILTER_FUNC(n) \
+#define FILTER_FUNC(n) \
 			bufr[d+n] -= bufg[d+n], \
 			bufb[d+n] -= bufg[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 2:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufr[d] -= bufg[d],
 			bufg[d] -= bufb[d];
 		break;
 	case 3:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufb[d] -= bufg[d],
 			bufg[d] -= bufr[d];
 		break;
 	case 4:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufr[d] -= bufg[d],
 			bufg[d] -= bufb[d],
 			bufb[d] -= bufr[d];
 		break;
 	case 5:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufg[d] -= bufb[d],
 			bufb[d] -= bufr[d];
 		break;
 	case 6:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufb[d+n] -= bufg[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 7:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufg[d+n] -= bufb[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 8:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufr[d+n] -= bufg[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 9:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufb[d] -= bufg[d],
 			bufg[d] -= bufr[d],
 			bufr[d] -= bufb[d];
 		break;
 	case 10:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufg[d+n] -= bufr[d+n], \
 			bufb[d+n] -= bufr[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 11:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufr[d+n] -= bufb[d+n], \
 			bufg[d+n] -= bufb[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 12:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufg[d] -= bufr[d],
 			bufr[d] -= bufb[d];
 		break;
 	case 13:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufg[d] -= bufr[d],
 			bufr[d] -= bufb[d],
 			bufb[d] -= bufg[d];
 		break;
 	case 14:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufr[d] -= bufb[d],
 			bufb[d] -= bufg[d],
 			bufg[d] -= bufr[d];
 		break;
 	case 15:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			t = bufb[d+n]<<1; \
 			bufr[d+n] -= t, \
 			bufg[d+n] -= t;
 		DO_FILTER
-		break;
+			break;
 	case 16:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufg[d+n] -= bufr[d+n];
 		DO_FILTER
-		break;
+			break;
 	case 17:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufr[d] -= bufb[d],
 			bufb[d] -= bufg[d];
 		break;
 	case 18:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufr[d] -= bufb[d];
 		break;
 	case 19:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufb[d] -= bufr[d],
 			bufr[d] -= bufg[d];
 		break;
 	case 20:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufb[d] -= bufr[d];
 		break;
 	case 21:
-		for(d = 0; d < len; d++)
-			bufb[d] -= bufg[d]>>1;
+		for (d = 0; d < len; d++)
+			bufb[d] -= bufg[d] >> 1;
 		break;
 	case 22:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufg[d+n] -= bufb[d+n]>>1;
 		DO_FILTER
-		break;
+			break;
 	case 23:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufg[d] -= bufb[d],
 			bufb[d] -= bufr[d],
 			bufr[d] -= bufg[d];
 		break;
 	case 24:
-		for(d = 0; d < len; d++)
+		for (d = 0; d < len; d++)
 			bufb[d] -= bufr[d],
 			bufr[d] -= bufg[d],
 			bufg[d] -= bufb[d];
 		break;
 	case 25:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufg[d+n] -= bufr[d+n]>>1;
 		DO_FILTER
-		break;
+			break;
 	case 26:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			bufr[d+n] -= bufg[d+n]>>1;
 		DO_FILTER
-		break;
+			break;
 	case 27:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			t = bufr[d+n]>>1; \
 			bufg[d+n] -= t, \
 			bufb[d+n] -= t;
 		DO_FILTER
-		break;
+			break;
 	case 28:
-		for(d = 0; d < len; d++)
-			bufr[d] -= bufb[d]>>1;
+		for (d = 0; d < len; d++)
+			bufr[d] -= bufb[d] >> 1;
 		break;
 	case 29:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			t = bufg[d+n]>>1; \
 			bufr[d+n] -= t, \
 			bufb[d+n] -= t;
 		DO_FILTER
-		break;
+			break;
 	case 30:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			t = bufb[d+n]>>1; \
 			bufr[d+n] -= t, \
 			bufg[d+n] -= t;
 		DO_FILTER
-		break;
+			break;
 	case 31:
-		for(d = 0; d < len; d++)
-			bufb[d] -= bufr[d]>>1;
+		for (d = 0; d < len; d++)
+			bufb[d] -= bufr[d] >> 1;
 		break;
 	case 32:
-		for(d = 0; d < len; d++)
-			bufr[d] -= bufb[d]<<1;
+		for (d = 0; d < len; d++)
+			bufr[d] -= bufb[d] << 1;
 		break;
 	case 33:
-		for(d = 0; d < len; d++)
-			bufb[d] -= bufg[d]<<1;
+		for (d = 0; d < len; d++)
+			bufb[d] -= bufg[d] << 1;
 		break;
 	case 34:
-		#undef FILTER_FUNC
-		#define FILTER_FUNC(n) \
+#undef FILTER_FUNC
+#define FILTER_FUNC(n) \
 			t = bufr[d+n]<<1; \
 			bufg[d+n] -= t, \
 			bufb[d+n] -= t;
 		DO_FILTER
-		break;
+			break;
 	case 35:
-		for(d = 0; d < len; d++)
-			bufg[d] -= bufb[d]<<1;
+		for (d = 0; d < len; d++)
+			bufg[d] -= bufb[d] << 1;
 		break;
 	case 36:
-		for(d = 0; d < len; d++)
-			bufr[d] -= bufg[d]<<1;
+		for (d = 0; d < len; d++)
+			bufr[d] -= bufg[d] << 1;
 		break;
 	case 37:
-		for(d = 0; d < len; d++)
-			bufr[d] -= bufg[d]<<1,
-			bufb[d] -= bufg[d]<<1;
+		for (d = 0; d < len; d++)
+			bufr[d] -= bufg[d] << 1,
+			bufb[d] -= bufg[d] << 1;
 		break;
 	case 38:
-		for(d = 0; d < len; d++)
-			bufg[d] -= bufr[d]<<1;
+		for (d = 0; d < len; d++)
+			bufg[d] -= bufr[d] << 1;
 		break;
 	case 39:
-		for(d = 0; d < len; d++)
-			bufb[d] -= bufr[d]<<1;
+		for (d = 0; d < len; d++)
+			bufb[d] -= bufr[d] << 1;
 		break;
 
 	}
@@ -698,7 +698,7 @@ int DetectColorFilter(unsigned char *b, unsigned char *g, unsigned char *r, int 
 	char rbuf[H_BLOCK_SIZE*W_BLOCK_SIZE];
 	TryCompressGolomb bc, gc, rc;
 
-	for(int code = 0; code < FILTER_TRY_COUNT; code++)   // 17..27 are currently not used
+	for (int code = 0; code < FILTER_TRY_COUNT; code++)   // 17..27 are currently not used
 	{
 		// copy bbuf, gbuf, rbuf into b, g, r.
 		memcpy(bbuf, b, sizeof(char)*size);
@@ -715,13 +715,13 @@ int DetectColorFilter(unsigned char *b, unsigned char *g, unsigned char *r, int 
 
 		// try to compress
 		int bits;
-		bits  = (bc.Try(bbuf, size), bc.Flush());
-		if(minbits != -1 && minbits < bits) continue;
+		bits = (bc.Try(bbuf, size), bc.Flush());
+		if (minbits != -1 && minbits < bits) continue;
 		bits += (gc.Try(gbuf, size), gc.Flush());
-		if(minbits != -1 && minbits < bits) continue;
+		if (minbits != -1 && minbits < bits) continue;
 		bits += (rc.Try(rbuf, size), rc.Flush());
 
-		if(minbits == -1 || minbits > bits)
+		if (minbits == -1 || minbits > bits)
 		{
 			minbits = bits, mincode = code;
 		}
@@ -736,7 +736,7 @@ int DetectColorFilter(unsigned char *b, unsigned char *g, unsigned char *r, int 
 	int f = filter;
 
 	filter++;
-	if(filter >= FILTER_TRY_COUNT) filter = 0;
+	if (filter >= FILTER_TRY_COUNT) filter = 0;
 
 	outsize = 0;
 
@@ -750,9 +750,9 @@ static void TLG6InitializeColorFilterCompressor(SlideCompressor &c)
 	unsigned char code[4096];
 	unsigned char dum[4096];
 	unsigned char *p = code;
-	for(int i = 0; i < 32; i++)
+	for (int i = 0; i < 32; i++)
 	{
-		for(int j = 0; j < 16; j++)
+		for (int j = 0; j < 16; j++)
 		{
 			p[0] = p[1] = p[2] = p[3] = i;
 			p += 4;
@@ -779,9 +779,9 @@ static void TLG6InitializeColorFilterCompressor(SlideCompressor &c)
  */
 int
 SaveTLG6(tTJSBinaryStream *out,
-		 int width, int height, int colors,
-		 void *callbackdata,
-		 tTVPGraphicScanLineCallback scanlinecallback)
+	int width, int height, int colors,
+	void *callbackdata,
+	tTVPGraphicScanLineCallback scanlinecallback)
 {
 	int ret = TLG_SUCCESS;
 
@@ -807,9 +807,9 @@ SaveTLG6(tTJSBinaryStream *out,
 	long max_bit_length = 0;
 
 	unsigned char *buf[MAX_COLOR_COMPONENTS];
-	for(int i = 0; i < MAX_COLOR_COMPONENTS; i++) buf[i] = NULL;
+	for (int i = 0; i < MAX_COLOR_COMPONENTS; i++) buf[i] = NULL;
 	char *block_buf[MAX_COLOR_COMPONENTS];
-	for(int i = 0; i < MAX_COLOR_COMPONENTS; i++) block_buf[i] = NULL;
+	for (int i = 0; i < MAX_COLOR_COMPONENTS; i++) block_buf[i] = NULL;
 	unsigned char *filtertypes = NULL;
 	tTJSBinaryStream *memstream = NULL;
 
@@ -818,46 +818,46 @@ SaveTLG6(tTJSBinaryStream *out,
 		memstream = GetMemoryStream();
 
 		TLG6BitStream bs(memstream);
-		
+
 		// allocate buffer
-		for(int c = 0; c < colors; c++)
+		for (int c = 0; c < colors; c++)
 		{
-			buf[c] = new unsigned char [W_BLOCK_SIZE * H_BLOCK_SIZE * 3];
-			block_buf[c] = new char [H_BLOCK_SIZE * width];
+			buf[c] = new unsigned char[W_BLOCK_SIZE * H_BLOCK_SIZE * 3];
+			block_buf[c] = new char[H_BLOCK_SIZE * width];
 		}
 		int w_block_count = (int)((width - 1) / W_BLOCK_SIZE) + 1;
 		int h_block_count = (int)((height - 1) / H_BLOCK_SIZE) + 1;
-		filtertypes = new unsigned char [w_block_count * h_block_count];
+		filtertypes = new unsigned char[w_block_count * h_block_count];
 
 		int fc = 0;
-		for(int y = 0; y < height; y += H_BLOCK_SIZE)
+		for (int y = 0; y < height; y += H_BLOCK_SIZE)
 		{
 			int ylim = y + H_BLOCK_SIZE;
-			if(ylim > height) ylim = height;
+			if (ylim > height) ylim = height;
 			int gwp = 0;
 			int xp = 0;
-			for(int x = 0; x < width; x += W_BLOCK_SIZE, xp++)
+			for (int x = 0; x < width; x += W_BLOCK_SIZE, xp++)
 			{
 				int xlim = x + W_BLOCK_SIZE;
-				if(xlim > width) xlim = width;
+				if (xlim > width) xlim = width;
 				int bw = xlim - x;
 
 				int p0size; // size of MED method (p=0)
 				int minp = 0; // most efficient method (0:MED, 1:AVG)
 				int ft; // filter type
 				int wp; // write point
-				for(int p = 0; p < 2; p++)
+				for (int p = 0; p < 2; p++)
 				{
-					int dbofs = (p+1) * (H_BLOCK_SIZE * W_BLOCK_SIZE);
+					int dbofs = (p + 1) * (H_BLOCK_SIZE * W_BLOCK_SIZE);
 
 					// do med(when p=0) or take average of upper and left pixel(p=1)
-					for(int c = 0; c < colors; c++)
+					for (int c = 0; c < colors; c++)
 					{
 						const unsigned char * prev = NULL;
 						const unsigned char * current = NULL;
 
 						int wp = 0;
-						for(int yy = y; yy < ylim; yy++)
+						for (int yy = y; yy < ylim; yy++)
 						{
 							const unsigned char *scan = (const unsigned char *)scanlinecallback(callbackdata, yy);
 							if (scan == NULL) {
@@ -865,19 +865,20 @@ SaveTLG6(tTJSBinaryStream *out,
 								goto errend;
 							}
 
-							const unsigned char * sl = x*colors + c + scan;
+							const unsigned char * sl = x * colors + c + scan;
 
 							const unsigned char * usl;
-							if(yy >= 1) {
-								scan = (const unsigned char *)scanlinecallback(callbackdata, yy-1);
+							if (yy >= 1) {
+								scan = (const unsigned char *)scanlinecallback(callbackdata, yy - 1);
 								if (scan == NULL) {
 									ret = TLG_ABORT;
 									goto errend;
 								}
-								usl = x*colors + c + scan;
-							} else
+								usl = x * colors + c + scan;
+							}
+							else
 								usl = NULL;
-							for(int xx = x; xx < xlim; xx++)
+							for (int xx = x; xx < xlim; xx++)
 							{
 								unsigned char pa = xx > 0 ? sl[-colors] : 0;
 								unsigned char pb = usl ? *usl : 0;
@@ -885,30 +886,30 @@ SaveTLG6(tTJSBinaryStream *out,
 
 								unsigned char py;
 
-//								py = 0;
-								if(p == 0)
+								//								py = 0;
+								if (p == 0)
 								{
 									unsigned char pc = (xx > 0 && usl) ? usl[-colors] : 0;
-									unsigned char min_a_b = pa>pb?pb:pa;
-									unsigned char max_a_b = pa<pb?pb:pa;
+									unsigned char min_a_b = pa > pb ? pb : pa;
+									unsigned char max_a_b = pa < pb ? pb : pa;
 
-									if(pc >= max_a_b)
+									if (pc >= max_a_b)
 										py = min_a_b;
-									else if(pc < min_a_b)
+									else if (pc < min_a_b)
 										py = max_a_b;
 									else
 										py = pa + pb - pc;
 								}
 								else
 								{
-									py = (pa+pb+1)>>1;
+									py = (pa + pb + 1) >> 1;
 								}
-								
+
 								buf[c][wp] = (unsigned char)(px - py);
 
 								wp++;
 								sl += colors;
-								if(usl) usl += colors;
+								if (usl) usl += colors;
 							}
 						}
 					}
@@ -919,38 +920,38 @@ SaveTLG6(tTJSBinaryStream *out,
 					// Odd lines are stored backward (right to left).
 
 					wp = 0;
-					for(int yy = y; yy < ylim; yy++)
+					for (int yy = y; yy < ylim; yy++)
 					{
 						int ofs;
-						if(!(xp&1))
+						if (!(xp & 1))
 							ofs = (yy - y)*bw;
 						else
 							ofs = (ylim - yy - 1) * bw;
 						bool dir; // false for forward, true for backward
-						if(!((ylim-y)&1))
+						if (!((ylim - y) & 1))
 						{
 							// vertical line count per block is even
-							dir = ((yy&1) ^ (xp&1)) != 0;
+							dir = ((yy & 1) ^ (xp & 1)) != 0;
 						}
 						else
 						{
 							// otherwise;
-							if(xp & 1)
+							if (xp & 1)
 							{
-								dir = (yy&1);
+								dir = (yy & 1);
 							}
 							else
 							{
-								dir = ((yy&1) ^ (xp&1)) != 0;
+								dir = ((yy & 1) ^ (xp & 1)) != 0;
 							}
 						}
 
-						if(!dir)
+						if (!dir)
 						{
 							// forward
-							for(int xx = 0; xx < bw; xx++)
+							for (int xx = 0; xx < bw; xx++)
 							{
-								for(int c = 0; c < colors; c++)
+								for (int c = 0; c < colors; c++)
 									buf[c][wp + dbofs] =
 									buf[c][ofs + xx];
 								wp++;
@@ -959,9 +960,9 @@ SaveTLG6(tTJSBinaryStream *out,
 						else
 						{
 							// backward
-							for(int xx = bw - 1; xx >= 0; xx--)
+							for (int xx = bw - 1; xx >= 0; xx--)
 							{
-								for(int c = 0; c < colors; c++)
+								for (int c = 0; c < colors; c++)
 									buf[c][wp + dbofs] =
 									buf[c][ofs + xx];
 								wp++;
@@ -971,13 +972,13 @@ SaveTLG6(tTJSBinaryStream *out,
 				}
 
 
-				for(int p = 0; p < 2; p++)
+				for (int p = 0; p < 2; p++)
 				{
-					int dbofs = (p+1) * (H_BLOCK_SIZE * W_BLOCK_SIZE);
+					int dbofs = (p + 1) * (H_BLOCK_SIZE * W_BLOCK_SIZE);
 					// detect color filter
 					int size = 0;
 					int ft_;
-					if(colors >= 3)
+					if (colors >= 3)
 						ft_ = DetectColorFilter(
 							buf[0] + dbofs,
 							buf[1] + dbofs,
@@ -986,14 +987,14 @@ SaveTLG6(tTJSBinaryStream *out,
 						ft_ = 0;
 
 					// select efficient mode of p (MED or average)
-					if(p == 0)
+					if (p == 0)
 					{
 						p0size = size;
 						ft = ft_;
 					}
 					else
 					{
-						if(p0size >= size)
+						if (p0size >= size)
 							minp = 1, ft = ft_;
 					}
 				}
@@ -1001,11 +1002,11 @@ SaveTLG6(tTJSBinaryStream *out,
 				// Apply most efficient color filter / prediction method
 				wp = 0;
 				int dbofs = (minp + 1)  * (H_BLOCK_SIZE * W_BLOCK_SIZE);
-				for(int yy = y; yy < ylim; yy++)
+				for (int yy = y; yy < ylim; yy++)
 				{
-					for(int xx = 0; xx < bw; xx++)
+					for (int xx = 0; xx < bw; xx++)
 					{
-						for(int c = 0; c < colors; c++)
+						for (int c = 0; c < colors; c++)
 							block_buf[c][gwp + wp] = buf[c][wp + dbofs];
 						wp++;
 					}
@@ -1014,13 +1015,13 @@ SaveTLG6(tTJSBinaryStream *out,
 				ApplyColorFilter(block_buf[0] + gwp,
 					block_buf[1] + gwp, block_buf[2] + gwp, wp, ft);
 
-				filtertypes[fc++] = (ft<<1) + minp;
-//				ftfreq[ft]++;
+				filtertypes[fc++] = (ft << 1) + minp;
+				//				ftfreq[ft]++;
 				gwp += wp;
 			}
 
 			// compress values (entropy coding)
-			for(int c = 0; c < colors; c++)
+			for (int c = 0; c < colors; c++)
 			{
 				int method;
 				CompressValuesGolomb(bs, block_buf[c], gwp);
@@ -1029,7 +1030,7 @@ SaveTLG6(tTJSBinaryStream *out,
 				fwrite(block_buf[c], 1, gwp, vs);
 #endif
 				long bitlength = bs.GetBitLength();
-				if(bitlength & 0xc0000000) {
+				if (bitlength & 0xc0000000) {
 					// "SaveTLG6: Too large bit length (given image may be too large)"
 					ret = TLG_ERROR;
 					goto errend;
@@ -1040,7 +1041,7 @@ SaveTLG6(tTJSBinaryStream *out,
 				// 01 means Gamma method (implemented but not used),
 				// 10 means modified LZSS method (not yet implemented),
 				// 11 means raw (uncompressed) data (not yet implemented).
-				if(max_bit_length < bitlength) max_bit_length = bitlength;
+				if (max_bit_length < bitlength) max_bit_length = bitlength;
 				bitlength |= (method << 30);
 				memstream->WriteInt32(bitlength);
 				bs.Flush();
@@ -1070,66 +1071,66 @@ SaveTLG6(tTJSBinaryStream *out,
 					goto errend;
 				}
 			}
-			catch(...)
+			catch (...)
 			{
-				delete [] outbuf;
+				delete[] outbuf;
 				throw;
 			}
-			delete [] outbuf;
-/*
-			FILE *f = fopen("ft.txt", "wt");
-			int n = 0;
-			for(int y = 0; y < h_block_count; y++)
-			{
-				for(int x = 0; x < w_block_count; x++)
-				{
-					int t = filtertypes[n++];
-					char b;
-					if(t & 1) b = 'A'; else b = 'M';
-					t >>= 1;
-					fprintf(f, "%c%x", b, t);
-				}
-				fprintf(f, "\n");
-			}
-			fclose(f);
-*/
+			delete[] outbuf;
+			/*
+						FILE *f = fopen("ft.txt", "wt");
+						int n = 0;
+						for(int y = 0; y < h_block_count; y++)
+						{
+							for(int x = 0; x < w_block_count; x++)
+							{
+								int t = filtertypes[n++];
+								char b;
+								if(t & 1) b = 'A'; else b = 'M';
+								t >>= 1;
+								fprintf(f, "%c%x", b, t);
+							}
+							fprintf(f, "\n");
+						}
+						fclose(f);
+			*/
 		}
 
 		// copy memory stream to output stream
 		out->CopyFrom(memstream, 0);
 	}
-	catch(...)
+	catch (...)
 	{
-		for(int i = 0; i < MAX_COLOR_COMPONENTS; i++)
+		for (int i = 0; i < MAX_COLOR_COMPONENTS; i++)
 		{
-			if(buf[i]) delete [] (buf[i]);
-			if(block_buf[i]) delete [] (block_buf[i]);
+			if (buf[i]) delete[](buf[i]);
+			if (block_buf[i]) delete[](block_buf[i]);
 		}
-		if(filtertypes) delete [] filtertypes;
-		if(memstream) delete memstream;
+		if (filtertypes) delete[] filtertypes;
+		if (memstream) delete memstream;
 		throw;
 	}
 errend:
-	for(int i = 0; i < MAX_COLOR_COMPONENTS; i++)
+	for (int i = 0; i < MAX_COLOR_COMPONENTS; i++)
 	{
-		if(buf[i]) delete [] (buf[i]);
-		if(block_buf) delete [] (block_buf[i]);
+		if (buf[i]) delete[](buf[i]);
+		if (block_buf) delete[](block_buf[i]);
 	}
-	if(filtertypes) delete [] filtertypes;
-	if(memstream) delete memstream;
+	if (filtertypes) delete[] filtertypes;
+	if (memstream) delete memstream;
 
 #ifdef WRITE_ENTROPY_VALUES
 	fclose(vs);
 #endif
-/*
-	for(int i = 0; i < 256; i++)
-	{
-		if(ftfreq[i])
+	/*
+		for(int i = 0; i < 256; i++)
 		{
-			printf("%3d : %d\n", i, ftfreq[i]);
+			if(ftfreq[i])
+			{
+				printf("%3d : %d\n", i, ftfreq[i]);
+			}
 		}
-	}
-*/
+	*/
 	return ret;
 }
 //---------------------------------------------------------------------------

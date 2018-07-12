@@ -27,7 +27,7 @@
 	return false can stop processing
 	color: 1=8bits, 3=24bits, 4=32bits
 */
-typedef bool (*tTVPGraphicSizeCallback)(void *callbackdata, tjs_uint width, tjs_uint height, tjs_uint color);
+typedef bool(*tTVPGraphicSizeCallback)(void *callbackdata, tjs_uint width, tjs_uint height, tjs_uint color);
 
 /*
 	callback type to ask the scanline buffer for the decoded image, per a line.
@@ -81,10 +81,10 @@ TVPGetInfoTLG(tTJSBinaryStream* src, int* width, int* height, int* version);
  */
 extern int
 TVPLoadTLG(void *callbackdata,
-		   tTVPGraphicSizeCallback sizecallback,
-		   tTVPGraphicScanLineCallback scanlinecallback,
-		   std::map<std::string,std::string> *tags,
-		   tTJSBinaryStream *src, int* tlgVersion = 0);
+	tTVPGraphicSizeCallback sizecallback,
+	tTVPGraphicScanLineCallback scanlinecallback,
+	std::map<std::string, std::string> *tags,
+	tTJSBinaryStream *src, int* tlgVersion = 0);
 
 /**
  * TLG画像のセーブ
@@ -100,10 +100,10 @@ TVPLoadTLG(void *callbackdata,
  */
 extern int
 TVPSaveTLG(tTJSBinaryStream *dest,
-		   int type,
-		   int width, int height, int colors,
-		   void *callbackdata,
-		   tTVPGraphicScanLineCallback scanlinecallback,
-		   const std::map<std::string,std::string> *tags);
+	int type,
+	int width, int height, int colors,
+	void *callbackdata,
+	tTVPGraphicScanLineCallback scanlinecallback,
+	const std::map<std::string, std::string> *tags);
 
 #endif
