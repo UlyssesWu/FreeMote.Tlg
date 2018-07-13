@@ -6,6 +6,8 @@
 
 We ran a benchmark to compare @[morkt/GARbro](https://github.com/morkt/GARbro)'s managed TLG loader with this (only for loading).
 
+Tests were taken on a 1,773KB (1330x848) TLG image.
+
 ``` ini
 
 BenchmarkDotNet=v0.10.14, OS=Windows 10.0.17134
