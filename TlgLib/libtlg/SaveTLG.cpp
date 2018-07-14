@@ -7,16 +7,16 @@ extern int SaveTLG6(tTJSBinaryStream *out, int width, int height, int colors, vo
 //---------------------------------------------------------------------------
 
 /**
- * TLG画像のセーブ
- * @param dest 格納先ストリーム
- * @param type 種別 0:TLG5 1:TLG6
- * @parma width 画像横幅
- * @param height 画像縦幅
- * @param colors 色数指定 1:8bitグレー 3:RGB 4:RGBA
- * @param callbackdata コールバック用データ
- * @param scanlinecallback セーブデータ通知用コールバック(データが入っているアドレスを渡す)
- * @param tags 保存するタグ情報
- * @return 0:成功 1:中断 -1:エラー
+ * Encode TLG image
+ * @param dest output stream
+ * @param type 0:TLG5 1:TLG6
+ * @parma width 
+ * @param height 
+ * @param colors 1:8bit Gray 3:RGB 4:RGBA
+ * @param callbackdata pass data
+ * @param scanlinecallback pass bitmap line data
+ * @param tags Tag dictionary
+ * @return 0:success 1:break -1:error
  */
 int
 TVPSaveTLG(tTJSBinaryStream *dest,

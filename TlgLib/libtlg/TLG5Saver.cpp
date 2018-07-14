@@ -6,13 +6,13 @@
 #define BLOCK_HEIGHT 4
 
 /**
- * TLG5画像の保存
- * @param out 出力先
- * @param width 画像横幅
- * @param height 画像縦幅
- * @param colors 色数指定 1/3/4
- * @param callback コールバック用パラメータ
- * @param scanlinecallback 行データを返すコールバック。NULL を返すと中断される。1つ前に渡したバッファは有効である必要がある
+ * Encode TLG5 Image
+ * @param out output stream
+ * @param width 
+ * @param height 
+ * @param colors bytes per pixel 1/3/4
+ * @param callback pass needed data
+ * @param scanlinecallback get bitmap line data, pass NULL to break process.
  */
 int
 SaveTLG5(tTJSBinaryStream *out,

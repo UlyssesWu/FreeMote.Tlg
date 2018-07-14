@@ -5,24 +5,24 @@
 #include <windows.h>
 
 /**
- * ハンドル/ファイル版
+ * FileStream
  */
 class tHandleStream : public tTJSBinaryStream {
 
 public:
 	/**
-	 * ハンドル指定で開く(ハンドルは解放されません)
+	 * open Handle (won't dispose)
 	 */
 	tHandleStream(HANDLE handle);
 
 	/**
-	 * ファイル名指定で開く
+	 * open file
 	 * @param mode
 	 */
 	tHandleStream(const char *filename, DWORD mode=GENERIC_READ);
 
 	/**
-	* ファイル名指定で開く
+	* open file
 	* @param mode
 	*/
 	tHandleStream(const wchar_t *filename, DWORD mode = GENERIC_READ);

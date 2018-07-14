@@ -61,23 +61,23 @@ TVPCheckTLG(tTJSBinaryStream* src);
 
 /**
  * Get TLG image info
- * @param src 読み込み元ストリーム
- * @param width 横幅情報格納先
- * @parma height 縦幅情報格納先
+ * @param src input stream
+ * @param width
+ * @parma height
  * @parma version (Added by Ulysses) TLG Version: 0=unknown, 5=v5, 6=v6
  */
 extern bool
 TVPGetInfoTLG(tTJSBinaryStream* src, int* width, int* height, int* version);
 
 /**
- * Load TLG image
- * @param dest 読み込み元ストリーム
- * @param callbackdata
- * @param sizecallback サイズ情報格納用コールバック
- * @param scanlinecallback ロードデータ格納用コールバック
- * @param tags 読み込んだタグ情報の格納先
+ * Decode TLG image
+ * @param src input stream
+ * @param callbackdata pass data
+ * @param sizecallback get size info
+ * @param scanlinecallback output bitmap line data
+ * @param tags Tag dictionary
  * @param tlgVersion (Added by Ulysses) TLG Version: 0=unknown, 5=v5, 6=v6
- * @return 0:成功 1:中断 -1:エラー
+ * @return 0:success 1:break -1:error
  */
 extern int
 TVPLoadTLG(void *callbackdata,
@@ -87,16 +87,16 @@ TVPLoadTLG(void *callbackdata,
 	tTJSBinaryStream *src, int* tlgVersion = 0);
 
 /**
- * Save TLG image
- * @param dest 格納先ストリーム
- * @param type 種別 0:TLG5 1:TLG6
- * @parma width 画像横幅
- * @param height 画像縦幅
- * @param colors 色数指定 1:8bitグレー 3:RGB 4:RGBA
- * @param callbackdata コールバック用データ
- * @param scanlinecallback セーブデータ通知用コールバック(データが入っているアドレスを渡す)
- * @param tags 保存するタグ情報
- * @return 0:成功 1:中断 -1:エラー
+ * Encode TLG image
+ * @param dest output stream
+ * @param type Type 0:TLG5 1:TLG6
+ * @parma width
+ * @param height
+ * @param colors 1:8bit Gray 3:RGB 4:RGBA
+ * @param callbackdata pass data
+ * @param scanlinecallback pass bitmap line data
+ * @param tags Tag dictionary
+ * @return 0:success 1:break -1:error
  */
 extern int
 TVPSaveTLG(tTJSBinaryStream *dest,

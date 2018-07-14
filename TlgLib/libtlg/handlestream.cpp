@@ -1,14 +1,14 @@
 #include "handlestream.h"
 
 /**
- * ハンドル指定で開く
+ * open Handle
  */
 tHandleStream::tHandleStream(HANDLE handle) : handle(handle), release(false)
 {
 }
 
 /**
- * ファイル名指定で開く
+ * open file
  */
 tHandleStream::tHandleStream(const char *filename, DWORD mode) : release(true)
 {

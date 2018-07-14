@@ -2,7 +2,7 @@
 #include <windows.h>
 #pragma comment(lib,"Ole32.lib")
 /**
- * Memory only stream
+ * MemoryStream
  */
 class tMemoryStream : public tTJSBinaryStream
 {
