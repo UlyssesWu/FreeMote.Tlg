@@ -9,7 +9,7 @@ namespace FreeMote.Tlg.Tests
     {
         static void Main(string[] args)
         {
-            MemoryTest();
+            //MemoryTest();
             
             var target = File.Exists("test.tlg") ? "test.tlg" : "NewGame5.tlg";
             TlgImageConverter converter = new TlgImageConverter();
@@ -49,8 +49,10 @@ namespace FreeMote.Tlg.Tests
             {
                 Console.WriteLine($"TLGv{v} Size: {w} x {h}");
             }
-            var bmp2 = TlgNative.ToBitmap(original, out _);
-            bmp2.Save("output2.png", ImageFormat.Png);
+            //var bmp2 = TlgNative.ToBitmap(original, out _);
+            var t = TlgNative.ToBitmap(original);
+            Console.WriteLine(t.Item2);
+            t.Item1.Save("output2.png", ImageFormat.Png);
 
             Console.WriteLine("Done.");
             Console.ReadLine();

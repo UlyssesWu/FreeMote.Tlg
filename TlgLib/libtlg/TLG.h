@@ -53,14 +53,14 @@ typedef void * (*tTVPGraphicScanLineCallback)(void *callbackdata, tjs_int y);
 //---------------------------------------------------------------------------
 
 /**
- * src 読み込み元ストリーム
- * TLG画像かどうかの判定
+ * src MemoryStream with TLG loaded
+ * Check if it's a valid TLG
  */
 bool
 TVPCheckTLG(tTJSBinaryStream* src);
 
 /**
- * TLG画像の情報を取得
+ * Get TLG image info
  * @param src 読み込み元ストリーム
  * @param width 横幅情報格納先
  * @parma height 縦幅情報格納先
@@ -70,7 +70,7 @@ extern bool
 TVPGetInfoTLG(tTJSBinaryStream* src, int* width, int* height, int* version);
 
 /**
- * TLG画像のロード
+ * Load TLG image
  * @param dest 読み込み元ストリーム
  * @param callbackdata
  * @param sizecallback サイズ情報格納用コールバック
@@ -87,7 +87,7 @@ TVPLoadTLG(void *callbackdata,
 	tTJSBinaryStream *src, int* tlgVersion = 0);
 
 /**
- * TLG画像のセーブ
+ * Save TLG image
  * @param dest 格納先ストリーム
  * @param type 種別 0:TLG5 1:TLG6
  * @parma width 画像横幅
