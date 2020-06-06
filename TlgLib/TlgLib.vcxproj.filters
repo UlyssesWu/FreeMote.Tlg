@@ -21,9 +21,6 @@
     <ClInclude Include="TlgLib.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="Resource.h">
       <Filter>Header</Filter>
     </ClInclude>
@@ -54,9 +51,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="AssemblyInfo.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="libtlg\handlestream.cpp">

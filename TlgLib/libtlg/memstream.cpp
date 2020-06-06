@@ -1,4 +1,4 @@
-#include "stream.h"
+﻿#include "stream.h"
 #include <windows.h>
 #pragma comment(lib,"Ole32.lib")
 /**
