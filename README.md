@@ -1,4 +1,4 @@
-# TlgLib
+# FreeMote.Tlg
 [![MyGet](https://buildstats.info/myget/monarchsolutions/FreeMote.Tlg)](https://www.myget.org/feed/monarchsolutions/package/nuget/FreeMote.Tlg)
 
 .NET wrapper for `libtlg`, just for loading or saving TLG (Terrible Low-quality Graphics) format files.
