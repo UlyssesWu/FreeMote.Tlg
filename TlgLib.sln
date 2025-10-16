@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2035
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TlgLib", "TlgLib\TlgLib.vcxproj", "{DF6C7BC2-3D99-4AE8-86E5-087BA766A3A8}"
 EndProject
@@ -31,10 +31,10 @@ Global
 		{DF6C7BC2-3D99-4AE8-86E5-087BA766A3A8}.Release|x86.Build.0 = Release|Win32
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.Build.0 = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.ActiveCfg = Debug|x64
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.Build.0 = Debug|x64
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.ActiveCfg = Debug|x86
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.Build.0 = Debug|x86
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|x64.ActiveCfg = Release|Any CPU

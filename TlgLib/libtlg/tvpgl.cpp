@@ -561,9 +561,9 @@ TVP_GL_FUNC_DECL(void, TVPTLG6DecodeLineGeneric, (tjs_uint32 *prevline, tjs_uint
 
 	for(i = start_block; i < block_limit; i ++)
 	{
-		int w = width - i*TVP_TLG6_W_BLOCK_SIZE, ww;
+		int w = width - i*TVP_TLG6_W_BLOCK_SIZE;
 		if(w > TVP_TLG6_W_BLOCK_SIZE) w = TVP_TLG6_W_BLOCK_SIZE;
-		ww = w;
+		int ww = w;
 		if(step==-1) in += ww-1;
 		if(i&1) in += oddskip * ww;
 		switch(filtertypes[i])
