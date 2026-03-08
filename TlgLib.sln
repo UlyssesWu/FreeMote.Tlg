@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27703.2035
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TlgLib", "TlgLib\TlgLib.vcxproj", "{DF6C7BC2-3D99-4AE8-86E5-087BA766A3A8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TlgLib.Test", "TlgLib.Test\TlgLib.Test.csproj", "{7D4F854D-19D8-45F2-9913-EF4B9879BA91}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TlgLib.Benchmark", "TlgLib.Benchmark\TlgLib.Benchmark.csproj", "{D2DA01CA-3140-4949-A097-55DB43BC7EE1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreeMote.Tlg.Managed", "FreeMote.Tlg.Managed\FreeMote.Tlg.Managed.csproj", "{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +33,10 @@ Global
 		{DF6C7BC2-3D99-4AE8-86E5-087BA766A3A8}.Release|x86.Build.0 = Release|Win32
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.Build.0 = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.Build.0 = Debug|Any CPU
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.ActiveCfg = Debug|x64
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x64.Build.0 = Debug|x64
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.ActiveCfg = Debug|x86
+		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Debug|x86.Build.0 = Debug|x86
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7D4F854D-19D8-45F2-9913-EF4B9879BA91}.Release|x64.ActiveCfg = Release|Any CPU
@@ -53,6 +55,18 @@ Global
 		{D2DA01CA-3140-4949-A097-55DB43BC7EE1}.Release|x64.Build.0 = Release|Any CPU
 		{D2DA01CA-3140-4949-A097-55DB43BC7EE1}.Release|x86.ActiveCfg = Release|Any CPU
 		{D2DA01CA-3140-4949-A097-55DB43BC7EE1}.Release|x86.Build.0 = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|x64.Build.0 = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Debug|x86.Build.0 = Debug|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|x64.ActiveCfg = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|x64.Build.0 = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|x86.ActiveCfg = Release|Any CPU
+		{1BAE4559-BEE2-4F42-BF5A-EDA8DC30892E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

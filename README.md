@@ -1,5 +1,5 @@
-# TlgLib
-[![MyGet](https://buildstats.info/myget/monarchsolutions/FreeMote.Tlg)](https://www.myget.org/feed/monarchsolutions/package/nuget/FreeMote.Tlg)
+# FreeMote.Tlg
+[![NuGet](https://img.shields.io/nuget/v/FreeMote.Tlg)](https://www.nuget.org/packages/FreeMote.Tlg)
 
 .NET wrapper for `libtlg`, just for loading or saving TLG (Terrible Low-quality Graphics) format files.
 
@@ -32,8 +32,8 @@ NativeLoader = new TlgLoader(byte[]).Bitmap;
 
 `libtlg` comes from [tlg-wic-codec](https://github.com/krkrz/tlg-wic-codec). We have made some [fixes](https://github.com/krkrz/tlg-wic-codec/pull/1) and modifications.
 
-We use @[morkt](https://github.com/morkt/GARbro)'s [ImageTLG](https://github.com/morkt/GARbro/blob/master/ArcFormats/KiriKiri/ImageTLG.cs) (LICENSE: MIT) in this project and [FreeMote](https://github.com/Project-AZUSA/FreeMote).
+We use @[morkt](https://github.com/morkt/GARbro)'s [ImageTLG](https://github.com/morkt/GARbro/blob/master/ArcFormats/KiriKiri/ImageTLG.cs) (LICENSE: MIT) in this project and [FreeMote](https://github.com/UlyssesWu/FreeMote).
 
 ---
 
-by **Ulysses** (wdwxy12345@gmail.com) from Project AZUSA
+by **Ulysses** (wdwxy12345@gmail.com)

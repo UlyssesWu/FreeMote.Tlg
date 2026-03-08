@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 
 namespace FreeMote.Tlg.Tests
 {
@@ -49,10 +50,27 @@ namespace FreeMote.Tlg.Tests
             {
                 Console.WriteLine($"TLGv{v} Size: {w} x {h}");
             }
+
+            using (TlgLoader ldr = new TlgLoader(original))
+            {
+                Bitmap b = ldr.Bitmap;
+                b.Save("output1.png", ImageFormat.Png);
+                b.Dispose();
+            }
+
             //var bmp2 = TlgNative.ToBitmap(original, out _);
             var t = TlgNative.ToBitmap(original);
             Console.WriteLine(t.Item2);
-            t.Item1.Save("output2.png", ImageFormat.Png);
+            using var ms1 = new MemoryStream();
+            t.Item1.Save(ms1, ImageFormat.Png);
+            var tlgBytes = t.Item1.ToTlg6();
+            File.WriteAllBytes("converted.tlg", tlgBytes);
+
+            t = TlgNative.ToBitmap(tlgBytes);
+            using var ms2 = new MemoryStream();
+            t.Item1.Save(ms2, ImageFormat.Png);
+
+            Console.WriteLine("tlg->png == tlg->png->tlg->png: " + ms1.ToArray().SequenceEqual(ms2.ToArray()));
 
             Console.WriteLine("Done.");
             Console.ReadLine();
