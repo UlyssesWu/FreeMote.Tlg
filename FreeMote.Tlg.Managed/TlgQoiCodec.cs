@@ -548,7 +548,18 @@ namespace FreeMote.Tlg.Managed
 
             if (qhdrPayload == null)
             {
-                throw new InvalidDataException("QHDR chunk not found.");
+                if (expectedFingerprint.HasValue)
+                {
+                    throw new InvalidDataException("QHDR chunk not found for fingerprint verification.");
+                }
+
+                ResolvePhase(1, ref imageIndex, ref imageCount, autoPhaseWindow);
+                if (imageIndex != 0)
+                {
+                    throw new InvalidDataException("ImageIndex is out of range for single-image TLGqoi.");
+                }
+
+                return DecodeSingleImageQoi(data, width, height, pos);
             }
 
             var fingerprint = ReadUInt32(qhdrPayload, 0);
@@ -624,6 +635,126 @@ namespace FreeMote.Tlg.Managed
                 pos2 = checked(pos2 + rtOffsets[band]);
             }
 
+            return new TlgDecodedImage(width, height, ConvertPixelsToBgra(pixels));
+        }
+
+        private static TlgDecodedImage DecodeSingleImageQoi(byte[] data, int width, int height, int streamPos)
+        {
+            if (streamPos < 0 || streamPos >= data.Length)
+            {
+                throw new InvalidDataException("Invalid single-image QOI stream offset.");
+            }
+
+            var pixelCount = checked(width * height);
+            var pixels = new uint[pixelCount];
+            var cache = new uint[64];
+            uint lastColor = 0xFF000000u;
+            var runLeft = 0;
+            var pos = streamPos;
+
+            for (var i = 0; i < pixelCount; i++)
+            {
+                if (runLeft > 0)
+                {
+                    runLeft--;
+                    pixels[i] = lastColor;
+                    continue;
+                }
+
+                if (pos >= data.Length)
+                {
+                    throw new InvalidDataException("Corrupted single-image QOI stream.");
+                }
+
+                var b0 = data[pos++];
+                uint color;
+
+                if (b0 == 0xFF)
+                {
+                    if (pos + 4 > data.Length)
+                    {
+                        throw new InvalidDataException("Corrupted single-image QOI stream.");
+                    }
+
+                    var r = data[pos++];
+                    var g = data[pos++];
+                    var b = data[pos++];
+                    var a = data[pos++];
+                    color = (uint)(b | (g << 8) | (r << 16) | (a << 24));
+                    cache[HashColor(color)] = color;
+                    lastColor = color;
+                    pixels[i] = color;
+                    continue;
+                }
+
+                if (b0 == 0xFE)
+                {
+                    if (pos + 3 > data.Length)
+                    {
+                        throw new InvalidDataException("Corrupted single-image QOI stream.");
+                    }
+
+                    var r = data[pos++];
+                    var g = data[pos++];
+                    var b = data[pos++];
+                    var pa = (int)((lastColor >> 24) & 0xFF);
+                    color = (uint)(b | (g << 8) | (r << 16) | (pa << 24));
+                    cache[HashColor(color)] = color;
+                    lastColor = color;
+                    pixels[i] = color;
+                    continue;
+                }
+
+                var pb = (int)(lastColor & 0xFF);
+                var pg = (int)((lastColor >> 8) & 0xFF);
+                var pr = (int)((lastColor >> 16) & 0xFF);
+                var pa2 = (int)((lastColor >> 24) & 0xFF);
+
+                switch (b0 >> 6)
+                {
+                    case 0:
+                        color = cache[b0 & 0x3F];
+                        break;
+                    case 1:
+                    {
+                        var nb = (pb + (b0 & 0x03) - 2) & 0xFF;
+                        var ng = (pg + ((b0 >> 2) & 0x03) - 2) & 0xFF;
+                        var nr = (pr + ((b0 >> 4) & 0x03) - 2) & 0xFF;
+                        color = (uint)(nb | (ng << 8) | (nr << 16) | (pa2 << 24));
+                        break;
+                    }
+                    case 2:
+                    {
+                        if (pos >= data.Length)
+                        {
+                            throw new InvalidDataException("Corrupted single-image QOI stream.");
+                        }
+
+                        var b1 = data[pos++];
+                        var dg = (b0 & 0x3F) - 32;
+                        var nb = (pb + dg + ((b1 & 0x0F) - 8)) & 0xFF;
+                        var ng = (pg + dg) & 0xFF;
+                        var nr = (pr + dg + (((b1 >> 4) & 0x0F) - 8)) & 0xFF;
+                        color = (uint)(nb | (ng << 8) | (nr << 16) | (pa2 << 24));
+                        break;
+                    }
+                    default:
+                        color = lastColor;
+                        runLeft = b0 & 0x3F;
+                        pixels[i] = color;
+                        continue;
+                }
+
+                cache[HashColor(color)] = color;
+                lastColor = color;
+                pixels[i] = color;
+            }
+
+            return new TlgDecodedImage(width, height, ConvertPixelsToBgra(pixels));
+        }
+
+        private static byte[] ConvertPixelsToBgra(uint[] pixels)
+        {
             var bgra = new byte[pixels.Length * 4];
             for (var i = 0; i < pixels.Length; i++)
             {
@@ -635,7 +766,7 @@ namespace FreeMote.Tlg.Managed
                 bgra[o + 3] = (byte)((c >> 24) & 0xFF);
             }
 
-            return new TlgDecodedImage(width, height, bgra);
+            return bgra;
         }
 
         private static void ResolvePhase(int imageCountHint, ref int imageIndex, ref int imageCount, int autoPhaseWindow)
@@ -789,7 +920,19 @@ namespace FreeMote.Tlg.Managed
                         return false;
                     }
 
-                    fs.Position = 28;
+                    fs.Position = 20;
+                    var tag = br.ReadBytes(4);
+                    if (!ByteEquals(tag, QhdrTag))
+                    {
+                        return false;
+                    }
+
+                    var chunkSize = br.ReadUInt32();
+                    if (chunkSize < 4 || fs.Position + chunkSize > fs.Length)
+                    {
+                        return false;
+                    }
+
                     fingerprint = br.ReadUInt32();
                     return true;
                 }
@@ -1077,6 +1220,15 @@ namespace FreeMote.Tlg.Managed
             return ((ulong)hi << 32) | lo;
         }
 
+        private static int HashColor(uint color)
+        {
+            var b = (int)(color & 0xFF);
+            var g = (int)((color >> 8) & 0xFF);
+            var r = (int)((color >> 16) & 0xFF);
+            var a = (int)((color >> 24) & 0xFF);
+            return (7 * b + 5 * g + 3 * r + 11 * a) & 0x3F;
+        }
+
         private sealed class VarintTable
         {
             public List<ulong> RawValues { get; set; }
@@ -1347,18 +1499,9 @@ namespace FreeMote.Tlg.Managed
                         break;
                 }
 
-                _cache[HashColor(color)] = color;
+                _cache[TlgQoiCodec.HashColor(color)] = color;
                 _lastColor = color;
                 return true;
-            }
-
-            private static int HashColor(uint color)
-            {
-                var b = (int)(color & 0xFF);
-                var g = (int)((color >> 8) & 0xFF);
-                var r = (int)((color >> 16) & 0xFF);
-                var a = (int)((color >> 24) & 0xFF);
-                return (7 * b + 5 * g + 3 * r + 11 * a) & 0x3F;
             }
 
             private bool TryReadControlVarint(out ulong value)

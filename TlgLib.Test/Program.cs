@@ -11,9 +11,12 @@ namespace FreeMote.Tlg.Tests
     {
         static void Main(string[] args)
         {
-            //MemoryTest();
-            //QoiTest();
-            //return;
+            if (args.Length > 0)
+            {
+                TlgQoiCodec.ExportAllAsBmp(args[0], "output");
+                Console.WriteLine("Done.");
+                return;
+            }
 
             var target = File.Exists("test.tlg") ? "test.tlg" : "NewGame5.tlg";
             TlgImageConverter converter = new TlgImageConverter();
@@ -124,10 +127,5 @@ namespace FreeMote.Tlg.Tests
             Console.ReadLine();
         }
 
-        static void QoiTest()
-        {
-            var img = TlgQoiCodec.Decode("tlgqoi.tlg");
-            img.SaveAsBmp("output_qoi.bmp");
-        }
     }
 }
