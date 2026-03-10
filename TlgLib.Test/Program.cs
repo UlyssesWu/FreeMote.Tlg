@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using FreeMote.Tlg.Managed;
 
 namespace FreeMote.Tlg.Tests
 {
@@ -11,7 +12,9 @@ namespace FreeMote.Tlg.Tests
         static void Main(string[] args)
         {
             //MemoryTest();
-            
+            //QoiTest();
+            //return;
+
             var target = File.Exists("test.tlg") ? "test.tlg" : "NewGame5.tlg";
             TlgImageConverter converter = new TlgImageConverter();
             var original = File.ReadAllBytes(target);
@@ -119,6 +122,12 @@ namespace FreeMote.Tlg.Tests
 
             Console.WriteLine("All done.");
             Console.ReadLine();
+        }
+
+        static void QoiTest()
+        {
+            var img = TlgQoiCodec.Decode("tlgqoi.tlg");
+            img.SaveAsBmp("output_qoi.bmp");
         }
     }
 }

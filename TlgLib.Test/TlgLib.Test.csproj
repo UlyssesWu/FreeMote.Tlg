@@ -102,6 +102,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FreeMote.Tlg.Managed\FreeMote.Tlg.Managed.csproj">
+      <Project>{1bae4559-bee2-4f42-bf5a-eda8dc30892e}</Project>
+      <Name>FreeMote.Tlg.Managed</Name>
+    </ProjectReference>
     <ProjectReference Include="..\TlgLib\TlgLib.vcxproj">
       <Project>{df6c7bc2-3d99-4ae8-86e5-087ba766a3a8}</Project>
       <Name>TlgLib</Name>

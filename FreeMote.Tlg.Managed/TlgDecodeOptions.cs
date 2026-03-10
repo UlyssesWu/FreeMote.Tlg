@@ -6,25 +6,23 @@ namespace FreeMote.Tlg.Managed
     public sealed class TlgDecodeOptions
     {
         /// <summary>
-        /// 显式指定相位起点 begin。
-        /// 为 null 时由解码器自动推断或使用 QREF 值。
+        /// 显式指定容器图像索引（0-based）。
         /// </summary>
-        public int? PhaseBegin { get; set; }
+        public int? ImageIndex { get; set; }
 
         /// <summary>
-        /// 显式指定相位终点 end（也作为相位周期）。
-        /// 为 null 时由解码器自动推断或使用 QREF 值。
+        /// 显式指定容器图像总数（也作为周期）。
         /// </summary>
-        public int? PhaseEnd { get; set; }
+        public int? ImageCount { get; set; }
 
         /// <summary>
-        /// 解码 TLGref 时，若未显式提供 PhaseBegin/PhaseEnd，是否优先使用 QREF 中的 begin/end。
+        /// 解码 TLGref 时，若未显式提供 ImageIndex/ImageCount，是否优先使用 QREF 中的 index/count。
         /// </summary>
-        public bool UseReferencePhaseWhenAvailable { get; set; } = true;
+        public bool UseReferenceIndexWhenAvailable { get; set; } = true;
 
         /// <summary>
-        /// 自动推断 begin 时使用的窗口宽度（默认 4）。
-        /// 仅在未显式给定 begin 且需要自动推断时生效。
+        /// 自动推断 ImageIndex 时使用的窗口宽度（默认 4）。
+        /// 仅在未显式给定 ImageIndex 且需要自动推断时生效。
         /// </summary>
         public int AutoPhaseWindow { get; set; } = 4;
 

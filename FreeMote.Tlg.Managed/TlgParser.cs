@@ -237,13 +237,13 @@ namespace FreeMote.Tlg.Managed
             return new TlgQoiHeader
             {
                 Fingerprint = BitConverter.ToUInt32(payload, 0),
-                PhaseEndHint = BitConverter.ToUInt32(payload, 4),
-                SectionHeight = BitConverter.ToUInt32(payload, 8),
-                SectionCount = BitConverter.ToUInt32(payload, 12),
-                Unknown10H = BitConverter.ToUInt64(payload, 16),
-                DtblOffset = BitConverter.ToUInt64(payload, 24),
-                RtblOffset = BitConverter.ToUInt64(payload, 32),
-                DataLengthHint = BitConverter.ToUInt64(payload, 40)
+                ImageCount = BitConverter.ToUInt32(payload, 4),
+                BandHeight = BitConverter.ToUInt32(payload, 8),
+                BandCount = BitConverter.ToUInt32(payload, 12),
+                SymbolCountHint = BitConverter.ToUInt64(payload, 16),
+                DtblChunkOffset = BitConverter.ToUInt64(payload, 24),
+                RtblChunkOffset = BitConverter.ToUInt64(payload, 32),
+                ContainerDataLengthHint = BitConverter.ToUInt64(payload, 40)
             };
         }
 
@@ -268,8 +268,8 @@ namespace FreeMote.Tlg.Managed
             return new TlgReferenceTarget
             {
                 Fingerprint = BitConverter.ToUInt32(payload, 0),
-                Begin = BitConverter.ToInt32(payload, 4),
-                End = BitConverter.ToInt32(payload, 8),
+                ImageIndex = BitConverter.ToInt32(payload, 4),
+                ImageCount = BitConverter.ToInt32(payload, 8),
                 PathByteLength = pathByteLength,
                 Path = path
             };

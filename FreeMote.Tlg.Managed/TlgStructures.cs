@@ -63,39 +63,39 @@ namespace FreeMote.Tlg.Managed
         public uint Fingerprint { get; internal set; }
 
         /// <summary>
-        /// 常作为相位提示值（实践中常用于推导 begin/end）。
+        /// 容器内图像数量。
         /// </summary>
-        public uint PhaseEndHint { get; internal set; }
+        public uint ImageCount { get; internal set; }
 
         /// <summary>
-        /// 分段高度（每个 section 的行数）。
+        /// 条带高度（每个 band 的行数）。
         /// </summary>
-        public uint SectionHeight { get; internal set; }
+        public uint BandHeight { get; internal set; }
 
         /// <summary>
-        /// section 数量。
+        /// 条带数量（band count）。
         /// </summary>
-        public uint SectionCount { get; internal set; }
+        public uint BandCount { get; internal set; }
 
         /// <summary>
-        /// (Unknown) QHDR +0x10
+        /// QOI 符号数量提示值。
         /// </summary>
-        public ulong Unknown10H { get; internal set; }
+        public ulong SymbolCountHint { get; internal set; }
 
         /// <summary>
         /// DTBL 的相对偏移（相对 QHDR 终止后的数据基址）。
         /// </summary>
-        public ulong DtblOffset { get; internal set; }
+        public ulong DtblChunkOffset { get; internal set; }
 
         /// <summary>
         /// RTBL 的相对偏移（相对 QHDR 终止后的数据基址）。
         /// </summary>
-        public ulong RtblOffset { get; internal set; }
+        public ulong RtblChunkOffset { get; internal set; }
 
         /// <summary>
-        /// 数据区长度提示值（未完全确认）。
+        /// 容器数据区总长度提示值。
         /// </summary>
-        public ulong DataLengthHint { get; internal set; }
+        public ulong ContainerDataLengthHint { get; internal set; }
 
     }
 
@@ -107,14 +107,14 @@ namespace FreeMote.Tlg.Managed
         public uint Fingerprint { get; internal set; }
 
         /// <summary>
-        /// 相位起点（phase begin）。
+        /// 容器内图像索引（0-based）。
         /// </summary>
-        public int Begin { get; internal set; }
+        public int ImageIndex { get; internal set; }
 
         /// <summary>
-        /// 相位周期（phase end）。
+        /// 容器内图像总数。
         /// </summary>
-        public int End { get; internal set; }
+        public int ImageCount { get; internal set; }
         public uint PathByteLength { get; internal set; }
         public string Path { get; internal set; }
     }
@@ -126,12 +126,12 @@ namespace FreeMote.Tlg.Managed
     public sealed class TlgMuxEntry
     {
         /// <summary>
-        /// partial 区域 X（推断）
+        /// partial 区域 X
         /// </summary>
         public uint PartialX { get; internal set; }
 
         /// <summary>
-        /// partial 区域 Y（推断）
+        /// partial 区域 Y
         /// </summary>
         public uint PartialY { get; internal set; }
 
@@ -147,13 +147,10 @@ namespace FreeMote.Tlg.Managed
 
         /// <summary>
         /// 子流相对偏移（原始 64 位值）
-        /// 在已验证样本中，该值通常相对 CMUX 区末尾（终止 chunk 后）计算。
+        /// 相对 CMUX 区末尾（终止 chunk 后）计算。
         /// </summary>
         public ulong RelativeStreamOffsetRaw { get; internal set; }
 
-        /// <summary>
-        /// 将相对偏移按有符号值解释，便于做 seek。
-        /// </summary>
         public long RelativeStreamOffset
         {
             get { return unchecked((long)RelativeStreamOffsetRaw); }
