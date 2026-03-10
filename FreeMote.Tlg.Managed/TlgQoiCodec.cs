@@ -9,14 +9,14 @@ namespace FreeMote.Tlg.Managed
     /// TLGqoi/TLGref/TLGmux 解码器
     /// 说明：
     /// 1) TLGqoi: 直接读取 QHDR、DTBL、RTBL 后解码像素。
-    /// 2) TLGref: 先解析 QREF，再定位目标 qoi 并按相位参数解码。
+    /// 2) TLGref: 先解析 QREF，再定位目标 qoi 并按 index/count 参数解码。
     /// 3) TLGmux: 读取 CMUX，定位子流后递归分发到 qoi/ref/sds。
     /// </summary>
     public static class TlgQoiCodec
     {
-        // 调用方未显式传 begin/end 时使用自动相位推断
+        // 调用方未显式传 ImageIndex/ImageCount 时使用自动推断
         private const int AutoPhase = int.MinValue;
-        // 经验上 TLGqoi 常用 4 相位窗口，实际 end 由 QHDR.PhaseEndHint 提示
+        // 自动推断窗口默认 4，ImageCount 通常由 QHDR 提供
         private const int DefaultPhaseWindow = 4;
         // 递归解码（mux/sds 嵌套）上限，避免异常数据导致无限递归
         private const int MaxNestedDecodeDepth = 16;
@@ -49,6 +49,58 @@ namespace FreeMote.Tlg.Managed
             return DecodeAny(data, directory, options, 0);
         }
 
+        /// <summary>
+        /// 解码一个 TLG 输入中的全部图像。
+        /// 对多图 TLGqoi（QHDR imageCount &gt; 1）会一次性返回所有帧；
+        /// 其他类型（ref/mux/sds 或单图 qoi）返回 1 张。
+        /// </summary>
+        public static IReadOnlyList<TlgDecodedImage> DecodeAll(string filePath)
+        {
+            return DecodeAll(filePath, null);
+        }
+
+        /// <summary>
+        /// 解码一个 TLG 输入中的全部图像。
+        /// </summary>
+        public static IReadOnlyList<TlgDecodedImage> DecodeAll(string filePath, TlgDecodeOptions options)
+        {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
+            options = options ?? new TlgDecodeOptions();
+            var data = File.ReadAllBytes(filePath);
+            var directory = Path.GetDirectoryName(filePath) ?? string.Empty;
+            return DecodeAllAny(data, directory, options, 0);
+        }
+
+        /// <summary>
+        /// 一次性导出全部图像为 PNG。
+        /// </summary>
+        public static IReadOnlyList<string> ExportAllAsPng(string filePath, string outputDirectory, string fileNamePrefix = null, TlgDecodeOptions options = null)
+        {
+            return ExportAll(filePath, outputDirectory, ".png", fileNamePrefix, options);
+        }
+
+        /// <summary>
+        /// 一次性导出全部图像为 BMP。
+        /// </summary>
+        public static IReadOnlyList<string> ExportAllAsBmp(string filePath, string outputDirectory, string fileNamePrefix = null, TlgDecodeOptions options = null)
+        {
+            return ExportAll(filePath, outputDirectory, ".bmp", fileNamePrefix, options);
+        }
+
+        public static IReadOnlyList<TlgDecodedImage> DecodeAllQoi(byte[] data)
+        {
+            return DecodeAllQoi(data, null, null);
+        }
+
+        public static IReadOnlyList<TlgDecodedImage> DecodeAllQoi(byte[] data, TlgDecodeOptions options)
+        {
+            return DecodeAllQoi(data, options, null);
+        }
+
         public static TlgDecodedImage DecodeQoi(byte[] data)
         {
             return DecodeQoi(data, null, null);
@@ -62,15 +114,15 @@ namespace FreeMote.Tlg.Managed
         public static TlgDecodedImage DecodeQoi(byte[] data, TlgDecodeOptions options, uint? expectedFingerprint)
         {
             options = options ?? new TlgDecodeOptions();
-            var begin = options.PhaseBegin ?? AutoPhase;
-            var end = options.PhaseEnd ?? AutoPhase;
+            var imageIndex = options.ImageIndex ?? AutoPhase;
+            var imageCount = options.ImageCount ?? AutoPhase;
             var autoPhaseWindow = NormalizeAutoPhaseWindow(options.AutoPhaseWindow);
-            return DecodeQoiCore(data, begin, end, expectedFingerprint, autoPhaseWindow);
+            return DecodeQoiCore(data, imageIndex, imageCount, expectedFingerprint, autoPhaseWindow);
         }
 
-        public static TlgDecodedImage DecodeQoi(byte[] data, int begin, int end, uint? expectedFingerprint)
+        public static TlgDecodedImage DecodeQoi(byte[] data, int imageIndex, int imageCount, uint? expectedFingerprint)
         {
-            return DecodeQoiCore(data, begin, end, expectedFingerprint, DefaultPhaseWindow);
+            return DecodeQoiCore(data, imageIndex, imageCount, expectedFingerprint, DefaultPhaseWindow);
         }
 
         /// <summary>
@@ -89,8 +141,8 @@ namespace FreeMote.Tlg.Managed
             }
 
             options = options ?? new TlgDecodeOptions();
-            var phaseBegin = options.PhaseBegin ?? AutoPhase;
-            var phaseEnd = options.PhaseEnd ?? AutoPhase;
+            var imageIndex = options.ImageIndex ?? AutoPhase;
+            var imageCount = options.ImageCount ?? AutoPhase;
             var autoPhaseWindow = NormalizeAutoPhaseWindow(options.AutoPhaseWindow);
 
             if (HasPrefix(data, TlgRefHeader))
@@ -99,26 +151,26 @@ namespace FreeMote.Tlg.Managed
                 var qoiPath = ResolveReferencePath(directory, reference);
                 var qoiData = File.ReadAllBytes(qoiPath);
 
-                // 未显式指定相位时，TLGref 默认优先采用 QREF 的 begin/end。
-                if (options.UseReferencePhaseWhenAvailable)
+                // 未显式指定 index/count 时，TLGref 默认优先采用 QREF 的值。
+                if (options.UseReferenceIndexWhenAvailable)
                 {
-                    if (!options.PhaseBegin.HasValue)
+                    if (!options.ImageIndex.HasValue)
                     {
-                        phaseBegin = reference.Begin;
+                        imageIndex = reference.ImageIndex;
                     }
 
-                    if (!options.PhaseEnd.HasValue)
+                    if (!options.ImageCount.HasValue)
                     {
-                        phaseEnd = reference.End;
+                        imageCount = reference.ImageCount;
                     }
                 }
 
-                return DecodeQoiCore(qoiData, phaseBegin, phaseEnd, reference.Fingerprint, autoPhaseWindow);
+                return DecodeQoiCore(qoiData, imageIndex, imageCount, reference.Fingerprint, autoPhaseWindow);
             }
 
             if (HasPrefix(data, TlgQoiHeader))
             {
-                return DecodeQoiCore(data, phaseBegin, phaseEnd, null, autoPhaseWindow);
+                return DecodeQoiCore(data, imageIndex, imageCount, null, autoPhaseWindow);
             }
 
             if (HasPrefix(data, TlgMuxHeader))
@@ -134,7 +186,158 @@ namespace FreeMote.Tlg.Managed
             throw new InvalidDataException("Unsupported TLG stream. Expected qoi/ref/mux/sds.");
         }
 
+        private static IReadOnlyList<TlgDecodedImage> DecodeAllAny(byte[] data, string directory, TlgDecodeOptions options, int depth)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (depth > MaxNestedDecodeDepth)
+            {
+                throw new InvalidDataException("TLG nested decode depth is too large.");
+            }
+
+            options = options ?? new TlgDecodeOptions();
+            var imageIndex = options.ImageIndex ?? AutoPhase;
+            var imageCount = options.ImageCount ?? AutoPhase;
+            var autoPhaseWindow = NormalizeAutoPhaseWindow(options.AutoPhaseWindow);
+
+            if (HasPrefix(data, TlgRefHeader))
+            {
+                var reference = ParseReference(data);
+                var qoiPath = ResolveReferencePath(directory, reference);
+                var qoiData = File.ReadAllBytes(qoiPath);
+
+                if (options.UseReferenceIndexWhenAvailable)
+                {
+                    if (!options.ImageIndex.HasValue)
+                    {
+                        imageIndex = reference.ImageIndex;
+                    }
+
+                    if (!options.ImageCount.HasValue)
+                    {
+                        imageCount = reference.ImageCount;
+                    }
+                }
+
+                return new List<TlgDecodedImage>(1)
+                {
+                    DecodeQoiCore(qoiData, imageIndex, imageCount, reference.Fingerprint, autoPhaseWindow)
+                };
+            }
+
+            if (HasPrefix(data, TlgQoiHeader))
+            {
+                return DecodeAllQoi(data, options, null);
+            }
+
+            if (HasPrefix(data, TlgMuxHeader))
+            {
+                return new List<TlgDecodedImage>(1)
+                {
+                    DecodeMux(data, directory, options, depth)
+                };
+            }
+
+            if (HasPrefix(data, Tlg0SdsHeader))
+            {
+                var raw = ExtractSdsRawPayload(data);
+                return DecodeAllAny(raw, directory, options, depth + 1);
+            }
+
+            throw new InvalidDataException("Unsupported TLG stream. Expected qoi/ref/mux/sds.");
+        }
+
+        private static IReadOnlyList<TlgDecodedImage> DecodeAllQoi(byte[] data, TlgDecodeOptions options, uint? expectedFingerprint)
+        {
+            options = options ?? new TlgDecodeOptions();
+            var autoPhaseWindow = NormalizeAutoPhaseWindow(options.AutoPhaseWindow);
+
+            // 若调用方显式给 index/count，则 DecodeAll 退化为单图解码。
+            if (options.ImageIndex.HasValue || options.ImageCount.HasValue)
+            {
+                var imageIndex = options.ImageIndex ?? AutoPhase;
+                var explicitImageCount = options.ImageCount ?? AutoPhase;
+                return new List<TlgDecodedImage>(1)
+                {
+                    DecodeQoiCore(data, imageIndex, explicitImageCount, expectedFingerprint, autoPhaseWindow)
+                };
+            }
+
+            if (!TryReadQoiImageCount(data, out var imageCount) || imageCount <= 1)
+            {
+                return new List<TlgDecodedImage>(1)
+                {
+                    DecodeQoiCore(data, AutoPhase, AutoPhase, expectedFingerprint, autoPhaseWindow)
+                };
+            }
+
+            var images = new List<TlgDecodedImage>(imageCount);
+            for (var i = 0; i < imageCount; i++)
+            {
+                images.Add(DecodeQoiCore(data, i, imageCount, expectedFingerprint, autoPhaseWindow));
+            }
+
+            return images;
+        }
+
+        private static IReadOnlyList<string> ExportAll(string filePath, string outputDirectory, string extension, string fileNamePrefix, TlgDecodeOptions options)
+        {
+            if (filePath == null)
+            {
+                throw new ArgumentNullException(nameof(filePath));
+            }
+
+            if (outputDirectory == null)
+            {
+                throw new ArgumentNullException(nameof(outputDirectory));
+            }
+
+            if (extension == null)
+            {
+                throw new ArgumentNullException(nameof(extension));
+            }
+
+            if (!string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Only .png and .bmp are supported.", nameof(extension));
+            }
+
+            Directory.CreateDirectory(outputDirectory);
+            var images = DecodeAll(filePath, options);
+            var prefix = string.IsNullOrEmpty(fileNamePrefix)
+                ? Path.GetFileNameWithoutExtension(filePath)
+                : fileNamePrefix;
+            var outputs = new List<string>(images.Count);
+
+            for (var i = 0; i < images.Count; i++)
+            {
+                var outputPath = Path.Combine(outputDirectory, prefix + "_" + i.ToString("D3") + extension);
+                if (string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase))
+                {
+                    images[i].SaveAsPng(outputPath);
+                }
+                else
+                {
+                    images[i].SaveAsBmp(outputPath);
+                }
+
+                outputs.Add(outputPath);
+            }
+
+            return outputs;
+        }
+
         private static TlgDecodedImage DecodeSds(byte[] data, string directory, TlgDecodeOptions options, int depth)
+        {
+            var raw = ExtractSdsRawPayload(data);
+            return DecodeAny(raw, directory, options, depth + 1);
+        }
+
+        private static byte[] ExtractSdsRawPayload(byte[] data)
         {
             if (data.Length < 15)
             {
@@ -155,8 +358,7 @@ namespace FreeMote.Tlg.Managed
                 throw new InvalidDataException("Invalid TLG0 SDS raw range.");
             }
 
-            var raw = Slice(data, rawStart, rawLength);
-            return DecodeAny(raw, directory, options, depth + 1);
+            return Slice(data, rawStart, rawLength);
         }
 
         private static TlgDecodedImage DecodeMux(byte[] data, string directory, TlgDecodeOptions options, int depth)
@@ -282,8 +484,8 @@ namespace FreeMote.Tlg.Managed
 
         private static TlgDecodedImage DecodeQoiCore(
             byte[] data,
-            int begin,
-            int end,
+            int imageIndex,
+            int imageCount,
             uint? expectedFingerprint,
             int autoPhaseWindow)
         {
@@ -355,10 +557,10 @@ namespace FreeMote.Tlg.Managed
                 throw new InvalidDataException("QREF fingerprint does not match target TLGqoi.");
             }
 
-            var phaseEndHint = (int)ReadUInt32(qhdrPayload, 4);
-            var sectionHeight = (int)ReadUInt32(qhdrPayload, 8);
-            var sectionCount = (int)ReadUInt32(qhdrPayload, 12);
-            if (sectionHeight <= 0 || sectionCount <= 0)
+            var imageCountHint = (int)ReadUInt32(qhdrPayload, 4);
+            var bandHeight = (int)ReadUInt32(qhdrPayload, 8);
+            var bandCount = (int)ReadUInt32(qhdrPayload, 12);
+            if (bandHeight <= 0 || bandCount <= 0)
             {
                 throw new InvalidDataException("Unsupported TLGqoi section metadata.");
             }
@@ -371,25 +573,25 @@ namespace FreeMote.Tlg.Managed
 
             var dtbl = ParseVarintTable(data, dtblPos, DtblTag);
             var rtbl = ParseVarintTable(data, rtblPos, RtblTag);
-            var dtblValues = ChooseVarintTableValues(dtbl, sectionCount, true);
-            var rtblValues = ChooseVarintTableValues(rtbl, sectionCount, false);
+            var dtblValues = ChooseVarintTableValues(dtbl, bandCount, true);
+            var rtblValues = ChooseVarintTableValues(rtbl, bandCount, false);
 
-            if (!IsValidDtbl(dtblValues, sectionCount))
+            if (!IsValidDtbl(dtblValues, bandCount))
             {
                 throw new InvalidDataException("Invalid DTBL contents.");
             }
 
-            if (!IsValidRtbl(rtblValues, sectionCount))
+            if (!IsValidRtbl(rtblValues, bandCount))
             {
                 throw new InvalidDataException("Invalid RTBL contents.");
             }
 
-            ResolvePhase(phaseEndHint, ref begin, ref end, autoPhaseWindow);
+            ResolvePhase(imageCountHint, ref imageIndex, ref imageCount, autoPhaseWindow);
 
-            var dtOffsets = new ulong[sectionCount];
-            var dtCounters = new ulong[sectionCount];
-            var rtOffsets = new ulong[sectionCount];
-            for (var i = 0; i < sectionCount; i++)
+            var dtOffsets = new ulong[bandCount];
+            var dtCounters = new ulong[bandCount];
+            var rtOffsets = new ulong[bandCount];
+            for (var i = 0; i < bandCount; i++)
             {
                 dtOffsets[i] = dtblValues[1 + i * 2];
                 dtCounters[i] = dtblValues[2 + i * 2];
@@ -400,26 +602,26 @@ namespace FreeMote.Tlg.Managed
             ulong pos1 = (ulong)baseDataPos;
             ulong pos2 = (ulong)rtbl.DataEnd;
 
-            for (var section = 0; section < sectionCount; section++)
+            for (var band = 0; band < bandCount; band++)
             {
-                var yStart = section * sectionHeight;
+                var yStart = band * bandHeight;
                 if (yStart >= height)
                 {
                     break;
                 }
 
-                var lines = sectionHeight;
+                var lines = bandHeight;
                 if (yStart + lines > height)
                 {
                     lines = height - yStart;
                 }
 
-                var worker = new SectionWorker(data, pos1, pos2, dtCounters[section], begin, end, width, yStart, lines);
+                var worker = new SectionWorker(data, pos1, pos2, dtCounters[band], imageIndex, imageCount, width, yStart, lines);
                 worker.DecodeInto(pixels);
 
-                // 每个 section 的两路输入都按表中偏移推进。
-                pos1 = checked(pos1 + dtOffsets[section]);
-                pos2 = checked(pos2 + rtOffsets[section]);
+                // 每个 band 的两路输入都按表中偏移推进。
+                pos1 = checked(pos1 + dtOffsets[band]);
+                pos2 = checked(pos2 + rtOffsets[band]);
             }
 
             var bgra = new byte[pixels.Length * 4];
@@ -436,70 +638,117 @@ namespace FreeMote.Tlg.Managed
             return new TlgDecodedImage(width, height, bgra);
         }
 
-        private static void ResolvePhase(int phaseEndHint, ref int begin, ref int end, int autoPhaseWindow)
+        private static void ResolvePhase(int imageCountHint, ref int imageIndex, ref int imageCount, int autoPhaseWindow)
         {
             // 调用方显式指定则直接使用。
-            if (begin >= 0 && end > begin)
+            if (imageIndex >= 0 && imageCount > imageIndex)
             {
                 return;
             }
 
             var window = NormalizeAutoPhaseWindow(autoPhaseWindow);
 
-            // 仅指定 end 时，按窗口反推 begin。
-            if (begin < 0 && end > 0)
+            // 仅指定 ImageCount 时，按窗口反推 ImageIndex。
+            if (imageIndex < 0 && imageCount > 0)
             {
-                begin = end - window;
-                if (begin < 0)
+                imageIndex = imageCount - window;
+                if (imageIndex < 0)
                 {
-                    begin = 0;
+                    imageIndex = 0;
                 }
 
-                if (end <= begin)
+                if (imageCount <= imageIndex)
                 {
-                    end = begin + 1;
+                    imageCount = imageIndex + 1;
                 }
 
                 return;
             }
 
-            // 仅指定 begin 时，按窗口推导 end。
-            if (begin >= 0 && end <= 0)
+            // 仅指定 ImageIndex 时，按窗口推导 ImageCount。
+            if (imageIndex >= 0 && imageCount <= 0)
             {
-                end = begin + window;
-                if (end <= begin)
+                imageCount = imageIndex + window;
+                if (imageCount <= imageIndex)
                 {
-                    end = begin + 1;
+                    imageCount = imageIndex + 1;
                 }
 
                 return;
             }
 
-            // 自动模式下，优先按 QHDR 提示推断相位窗口。
-            if (phaseEndHint > 0)
+            // 自动模式下，优先采用 QHDR 的 ImageCount。
+            if (imageCountHint > 0)
             {
-                end = phaseEndHint;
-                begin = end - window;
-                if (begin < 0)
+                imageCount = imageCountHint;
+                imageIndex = imageCount - window;
+                if (imageIndex < 0)
                 {
-                    begin = 0;
+                    imageIndex = 0;
                 }
 
-                if (end <= begin)
+                if (imageCount <= imageIndex)
                 {
-                    end = begin + 1;
+                    imageCount = imageIndex + 1;
                 }
 
                 return;
             }
 
-            begin = 0;
-            end = 1;
+            imageIndex = 0;
+            imageCount = 1;
         }
 
         private static int NormalizeAutoPhaseWindow(int window)
         {
             return window > 0 ? window : DefaultPhaseWindow;
+        }
+
+        private static bool TryReadQoiImageCount(byte[] data, out int imageCount)
+        {
+            imageCount = 0;
+            if (data == null || !HasPrefix(data, TlgQoiHeader))
+            {
+                return false;
+            }
+
+            var pos = 20;
+            while (pos + 8 <= data.Length)
+            {
+                var tag = Slice(data, pos, 4);
+                var size = (int)ReadUInt32(data, pos + 4);
+                pos += 8;
+                if (size < 0 || pos + size > data.Length)
+                {
+                    return false;
+                }
+
+                if (IsTerminator(tag, size))
+                {
+                    break;
+                }
+
+                if (ByteEquals(tag, QhdrTag))
+                {
+                    if (size < 48)
+                    {
+                        return false;
+                    }
+
+                    var count32 = ReadUInt32(data, pos + 4);
+                    if (count32 == 0 || count32 > int.MaxValue)
+                    {
+                        return false;
+                    }
+
+                    imageCount = (int)count32;
+                    return true;
+                }
+
+                pos += size;
+            }
+
+            return false;
         }
 
         private static string ResolveReferencePath(string directory, TlgReferenceInfo reference)
@@ -584,8 +833,8 @@ namespace FreeMote.Tlg.Managed
 
                     var payload = Slice(data, pos, size);
                     var fingerprint = ReadUInt32(payload, 0);
-                    var begin = ReadInt32(payload, 4);
-                    var end = ReadInt32(payload, 8);
+                    var imageIndex = ReadInt32(payload, 4);
+                    var imageCount = ReadInt32(payload, 8);
                     var pathByteLen = (int)ReadUInt32(payload, 12);
                     if (pathByteLen < 0 || 16 + pathByteLen > payload.Length)
                     {
@@ -603,8 +852,8 @@ namespace FreeMote.Tlg.Managed
                     return new TlgReferenceInfo
                     {
                         Fingerprint = fingerprint,
-                        Begin = begin,
-                        End = end,
+                        ImageIndex = imageIndex,
+                        ImageCount = imageCount,
                         Path = path
                     };
                 }
@@ -839,8 +1088,8 @@ namespace FreeMote.Tlg.Managed
         private sealed class TlgReferenceInfo
         {
             public uint Fingerprint { get; set; }
-            public int Begin { get; set; }
-            public int End { get; set; }
+            public int ImageIndex { get; set; }
+            public int ImageCount { get; set; }
             public string Path { get; set; }
         }
 
