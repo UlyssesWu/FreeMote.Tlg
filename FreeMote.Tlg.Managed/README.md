@@ -1,6 +1,8 @@
 # FreeMote.Tlg.Managed
 
-主要支持 `TLGqoi` 的解码，并可导出 BMP/PNG。  
+主要支持 `TLGqoi` 的解码，并可导出 BMP/PNG。
+
+由于没有搜集`TLGmux`样本，`TLGmux`相关内容完全参照 @2778995958 的[文档](https://github.com/2778995958/gal_tachie_ai/tree/main/yuzu/tlgqoi_mux_ref)实现。
 
 ## 用法
 
@@ -8,10 +10,8 @@
 using FreeMote.Tlg.Managed;
 
 var image = TlgQoiCodec.Decode(@"path\to\image.tlg");
-image.SaveAsBmp(@"out.bmp");
+image.SaveAsPng(@"out.png");
 ```
-
-## 一次性导出多图
 
 对多图容器（例如 `QHDR.imageCount > 1` 的 `TLGqoi`），可批量导出：
 
@@ -31,7 +31,7 @@ for (var i = 0; i < frames.Count; i++)
 }
 ```
 
-### 选项说明
+## 选项说明
 
 - `ImageIndex` / `ImageCount`
   - 分别对应容器图像索引和容器图像总数（总数也作为相位周期）。
@@ -52,3 +52,4 @@ var image = TlgQoiCodec.Decode(path, new TlgDecodeOptions
     MuxEntryIndex = 0
 });
 ```
+

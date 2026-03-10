@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace FreeMote.Tlg.Managed
@@ -368,6 +371,21 @@ namespace FreeMote.Tlg.Managed
                 throw new InvalidDataException("Invalid TLGmux header.");
             }
 
+            var colorType = data[11];
+            if (colorType != 3 && colorType != 4)
+            {
+                throw new InvalidDataException("Unsupported TLGmux color type.");
+            }
+
+            var canvasWidth32 = ReadUInt32(data, 12);
+            var canvasHeight32 = ReadUInt32(data, 16);
+            if (canvasWidth32 == 0 || canvasHeight32 == 0 || canvasWidth32 > int.MaxValue || canvasHeight32 > int.MaxValue)
+            {
+                throw new InvalidDataException("Invalid TLGmux canvas size.");
+            }
+
+            var canvasWidth = (int)canvasWidth32;
+            var canvasHeight = (int)canvasHeight32;
             var pos = 20;
             var entries = new List<MuxEntryInfo>();
             while (pos + 8 <= data.Length)
@@ -401,6 +419,21 @@ namespace FreeMote.Tlg.Managed
 
             // 按原始实现，CMUX 偏移通常以“当前流位置（终止 chunk 之后）”为基准。
             var muxBaseOffset = pos;
+            Exception firstError = null;
+
+            // 立绘型 TLGmux：CMUX 记录的是 tile 的 (x,y,w,h,offset)，
+            // 默认应将全部 tile 拼接回完整画布后返回。
+            if (!options.MuxEntryIndex.HasValue)
+            {
+                try
+                {
+                    return DecodeMuxCanvas(data, directory, options, depth, muxBaseOffset, entries, canvasWidth, canvasHeight);
+                }
+                catch (Exception ex) when (ex is InvalidDataException || ex is EndOfStreamException || ex is FileNotFoundException)
+                {
+                    firstError = ex;
+                }
+            }
 
             if (options.MuxEntryIndex.HasValue)
             {
@@ -413,7 +446,6 @@ namespace FreeMote.Tlg.Managed
                 return DecodeMuxEntry(data, directory, options, depth, muxBaseOffset, entries[index]);
             }
 
-            Exception firstError = null;
             for (var i = 0; i < entries.Count; i++)
             {
                 try
@@ -430,6 +462,53 @@ namespace FreeMote.Tlg.Managed
             }
 
             throw new InvalidDataException("Failed to decode all CMUX entries.", firstError);
+        }
+
+        private static TlgDecodedImage DecodeMuxCanvas(
+            byte[] muxData,
+            string directory,
+            TlgDecodeOptions options,
+            int depth,
+            int muxBaseOffset,
+            List<MuxEntryInfo> entries,
+            int canvasWidth,
+            int canvasHeight)
+        {
+            using (var canvas = new Bitmap(canvasWidth, canvasHeight, PixelFormat.Format32bppArgb))
+            {
+                using (var graphics = Graphics.FromImage(canvas))
+                {
+                    graphics.Clear(Color.Transparent);
+                    for (var i = 0; i < entries.Count; i++)
+                    {
+                        var entry = entries[i];
+                        if (entry.PartialWidth <= 0 || entry.PartialHeight <= 0)
+                        {
+                            throw new InvalidDataException("TLGmux CMUX entry has invalid tile size.");
+                        }
+
+                        var right = (long)entry.PartialX + entry.PartialWidth;
+                        var bottom = (long)entry.PartialY + entry.PartialHeight;
+                        if (entry.PartialX < 0 || entry.PartialY < 0 || right > canvasWidth || bottom > canvasHeight)
+                        {
+                            throw new InvalidDataException("TLGmux CMUX entry is out of canvas bounds.");
+                        }
+
+                        var tile = DecodeMuxEntry(muxData, directory, options, depth, muxBaseOffset, entry);
+                        if (tile.Width != entry.PartialWidth || tile.Height != entry.PartialHeight)
+                        {
+                            throw new InvalidDataException("TLGmux tile size does not match CMUX entry.");
+                        }
+
+                        using (var tileBitmap = CreateBitmapFromDecodedImage(tile))
+                        {
+                            graphics.DrawImageUnscaled(tileBitmap, entry.PartialX, entry.PartialY);
+                        }
+                    }
+                }
+
+                return CreateDecodedImageFromBitmap(canvas);
+            }
         }
 
         private static void ParseCmuxEntries(byte[] data, int payloadPos, int payloadSize, List<MuxEntryInfo> entries)
@@ -454,8 +533,21 @@ namespace FreeMote.Tlg.Managed
                     throw new InvalidDataException("CMUX entry exceeds payload range.");
                 }
 
+                var partialX = ReadUInt32(data, entryPos);
+                var partialY = ReadUInt32(data, entryPos + 4);
+                var partialWidth = ReadUInt32(data, entryPos + 8);
+                var partialHeight = ReadUInt32(data, entryPos + 12);
+                if (partialX > int.MaxValue || partialY > int.MaxValue || partialWidth > int.MaxValue || partialHeight > int.MaxValue)
+                {
+                    throw new InvalidDataException("CMUX entry value is too large.");
+                }
+
                 entries.Add(new MuxEntryInfo
                 {
+                    PartialX = (int)partialX,
+                    PartialY = (int)partialY,
+                    PartialWidth = (int)partialWidth,
+                    PartialHeight = (int)partialHeight,
                     RelativeStreamOffset = unchecked((long)ReadUInt64(data, entryPos + 16))
                 });
 
@@ -1220,6 +1312,75 @@ namespace FreeMote.Tlg.Managed
             return ((ulong)hi << 32) | lo;
         }
 
+        private static Bitmap CreateBitmapFromDecodedImage(TlgDecodedImage image)
+        {
+            var bitmap = new Bitmap(image.Width, image.Height, PixelFormat.Format32bppArgb);
+            var rect = new Rectangle(0, 0, image.Width, image.Height);
+            BitmapData bitmapData = null;
+            try
+            {
+                bitmapData = bitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+                var rowBytes = image.Width * 4;
+                var stride = bitmapData.Stride;
+                for (var y = 0; y < image.Height; y++)
+                {
+                    var dstOffset = stride >= 0
+                        ? y * stride
+                        : (image.Height - 1 - y) * (-stride);
+                    Marshal.Copy(image.Bgra32, y * rowBytes, IntPtr.Add(bitmapData.Scan0, dstOffset), rowBytes);
+                }
+
+                bitmap.UnlockBits(bitmapData);
+                bitmapData = null;
+                return bitmap;
+            }
+            catch
+            {
+                if (bitmapData != null)
+                {
+                    bitmap.UnlockBits(bitmapData);
+                }
+
+                bitmap.Dispose();
+                throw;
+            }
+        }
+
+        private static TlgDecodedImage CreateDecodedImageFromBitmap(Bitmap bitmap)
+        {
+            var width = bitmap.Width;
+            var height = bitmap.Height;
+            var bgra = new byte[checked(width * height * 4)];
+            var rect = new Rectangle(0, 0, width, height);
+            BitmapData bitmapData = null;
+            try
+            {
+                bitmapData = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                var rowBytes = width * 4;
+                var stride = bitmapData.Stride;
+                for (var y = 0; y < height; y++)
+                {
+                    var srcOffset = stride >= 0
+                        ? y * stride
+                        : (height - 1 - y) * (-stride);
+                    Marshal.Copy(IntPtr.Add(bitmapData.Scan0, srcOffset), bgra, y * rowBytes, rowBytes);
+                }
+
+                bitmap.UnlockBits(bitmapData);
+                bitmapData = null;
+                return new TlgDecodedImage(width, height, bgra);
+            }
+            catch
+            {
+                if (bitmapData != null)
+                {
+                    bitmap.UnlockBits(bitmapData);
+                }
+
+                throw;
+            }
+        }
+
         private static int HashColor(uint color)
         {
             var b = (int)(color & 0xFF);
@@ -1247,6 +1408,10 @@ namespace FreeMote.Tlg.Managed
 
         private sealed class MuxEntryInfo
         {
+            public int PartialX { get; set; }
+            public int PartialY { get; set; }
+            public int PartialWidth { get; set; }
+            public int PartialHeight { get; set; }
             public long RelativeStreamOffset { get; set; }
         }
 
