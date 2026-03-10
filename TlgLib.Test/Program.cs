@@ -13,7 +13,7 @@ namespace FreeMote.Tlg.Tests
         {
             if (args.Length > 0)
             {
-                TlgQoiCodec.ExportAllAsBmp(args[0], "output");
+                TlgQoiCodec.ExportAllAsPng(args[0], "output");
                 Console.WriteLine("Done.");
                 return;
             }
